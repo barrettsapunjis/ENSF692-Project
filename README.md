@@ -12,3 +12,6 @@ Expected hierarchy:
 			- contains goalie stats per situation
 			- contains total team stats per situation 
 
+- how to use:
+   	- `pip install -r requirements.txt`
+   	- `python .\main.py`
