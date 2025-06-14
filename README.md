@@ -12,6 +12,35 @@ Expected hierarchy:
 			- contains goalie stats per situation
 			- contains total team stats per situation 
 
+
+
 - how to use:
    	- `pip install -r requirements.txt`
    	- `python .\main.py`
+
+
+
+```mermaid graph TD
+classDiagram
+	class Flask {
+	    + Flask(__name__)
+	}
+	
+	class App {
+	    - df: DataFrame
+	    + index() str
+	}
+	
+	class Main {
+	    + main() void
+	}
+	
+	class IndexTemplate {
+	    + render(keyword1: str, keyword2: str, table: str) html
+	}
+	
+	Flask <|-- App
+	Main --> App
+	App --> IndexTemplate
+
+```
