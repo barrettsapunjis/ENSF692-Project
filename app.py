@@ -1,32 +1,27 @@
-from flask import Flask, render_template, request
 import pandas as pd
-
-app = Flask(__name__)
-
-# Load CSV once on startup (replace with your CSV file path)
-df = pd.read_csv('skaters.csv')
-
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    filtered_data = None
-    keyword1 = ''
-    keyword2 = ''
-
-    if request.method == 'POST':
-        keyword1 = request.form.get('keyword1', '').strip()
-        keyword2 = request.form.get('keyword2', '').strip()
-
-        # Simple filtering on two columns (replace 'Column1' and 'Column2')
-        filtered = df
-
-        if keyword1:
-            filtered = filtered[filtered['position'].astype(str).str.contains(keyword1, case=False, na=False)]
-        if keyword2:
-            filtered = filtered[filtered['team'].astype(str).str.contains(keyword2, case=False, na=False)]
-
-        filtered_data = filtered.to_string(index=False)
+import dataHandler as dh
 
 
-    return render_template('index.html', table=filtered_data, keyword1=keyword1, keyword2=keyword2)
+def interactiveCLI():
+    data = dh.constructData()
+
+    while(True):
+        userIn = int(input("Please select an option for what you would like to do \n" \
+                        "[1] find movies by actor \n" \
+                        "[2] find actors in movie \n" \
+                        "[3] find movies by date \n"))
+        
+        match userIn:
+            case 1:
+                newIn = input(f"You have selected option [{userIn}]: find movies by actor \n" \
+                            "Please enter the name of the actor you would like to find or enter 0 for the main menu: ")
+                if(newIn == "0"):
+                    continue
+
+                else:
+                    print(dh.findActorMovies(data, newIn))
 
 
+
+if __name__ == '__main__':
+    interactiveCLI()
