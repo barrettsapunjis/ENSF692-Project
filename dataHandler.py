@@ -36,5 +36,17 @@ def findActorsByMovie(data, movie):
     return df.reset_index(drop=True)
 
 def getActorStats(data, actor):
-    pass 
+    averageRating = 0
+    maxRating = 0
+    minRating = 0
+
+    df = data[data['actors'] == actor]
+
+    maxRating = float(df['rating'].max())
+    minRating = float(df['rating'].min())
+    averageRating = float(df['rating'].mean() )
+
+    statString = f"The maximum rating for the actor is: {maxRating}\nThe minimum rating is: {minRating}\nThe average rating is {averageRating}"
+
+    return statString
 
