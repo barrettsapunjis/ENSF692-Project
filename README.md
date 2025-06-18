@@ -21,25 +21,20 @@ there is a possiblity that the actors can be made into a hierarchial key and do 
 
 ```mermaid graph TD
 classDiagram
-	class Flask {
-	    + Flask(__name__)
-	}
-	
-	class App {
-	    - df: DataFrame
-	    + index() str
-	}
-	
-	class Main {
-	    + main() void
-	}
-	
-	class IndexTemplate {
-	    + render(keyword1: str, keyword2: str, table: str) html
-	}
-	
-	Flask <|-- App
-	Main --> App
-	App --> IndexTemplate
-
+    class App {
+        - df: DataFrame
+        + interactiveCLI() void
+    }
+    
+    class DataHandler {
+        + constructData() DataFrame
+        + findActorMovies(data: DataFrame, actor: str) DataFrame
+    }
+    
+    class Main {
+        + main() void
+    }
+    
+    Main --> App
+    App --> DataHandler
 ```
