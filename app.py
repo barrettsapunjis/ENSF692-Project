@@ -15,10 +15,13 @@ def interactiveCLI():
             case 1:
                 newIn = input(f"You have selected option [{userIn}]: find movies by actor \n" \
                             "Please enter the name of the actor you would like to find or enter 0 for the main menu: ")
-                if(newIn == "0"):            continue
+                if(newIn == "0"):            
+                    continue
 
                 else:
                     print(dh.findMoviesByActor(data, newIn))
+                    print(dh.getActorStats(data, newIn))
+                
 
             case 2:
                 newIn = input(f"You have selected option [{userIn}]: find actors by movie \n" \
