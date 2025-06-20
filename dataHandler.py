@@ -12,8 +12,17 @@ def constructData():
     return merge2
 
 def findActorMovies(data, actor):
-    print(f"selected actor {actor}")
-    viewingData = data.groupby("actors")["movie"]
-    grouped = pd.DataFrame(viewingData)
+    print(f"Selected actor: {actor}")
+    print(data)
+    # Group the data by actors and collect all their movies
+    grouped = data.groupby('actors')[['title','movie']].apply(list).reset_index()
     print(grouped)
-    return grouped[f"{actor}"][:]
+    # Filter for the specific actor
+    actor_movies = grouped.loc[f"{actor}"]
+    
+    # Convert to DataFrame for better presentation
+    result = pd.DataFrame({'movies': actor_movies})
+    
+    print(f"Movies featuring {actor}:")
+    
+    return result

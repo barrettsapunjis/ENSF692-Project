@@ -19,6 +19,7 @@ def interactiveCLI():
                     continue
 
                 else:
+                    print(userIn)
                     print(dh.findActorMovies(data, newIn))
 
 
