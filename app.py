@@ -30,8 +30,13 @@ def interactiveCLI():
                     continue
 
                 else:
+<<<<<<< HEAD
+                    print(userIn)
+                    print(dh.findActorMovies(data, newIn))
+=======
                     print(dh.findActorsByMovie(data, newIn))
                     
+>>>>>>> 8b952208ac1d977e3ba5233ec0a720df8e946c55
 
 
 

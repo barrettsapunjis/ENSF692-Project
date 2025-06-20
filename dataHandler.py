@@ -14,6 +14,7 @@ def constructData():
 
     return merge2
 
+
 def findMoviesByActor(data, actor):
     print(f"selected actor {actor}")
     viewingData = data[['actors', 'movie', 'title']].groupby("actors")
@@ -49,4 +50,5 @@ def getActorStats(data, actor):
     statString = f"The maximum rating for the actor is: {maxRating}\nThe minimum rating is: {minRating}\nThe average rating is {averageRating}"
 
     return statString
+
 
