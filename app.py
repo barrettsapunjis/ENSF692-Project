@@ -5,11 +5,20 @@ import dataHandler as dh
 def interactiveCLI():
     data = dh.constructData()
 
+    print("Hello! Welcome to The Movie Catalog. You wil have the ability to get a list of movies that match your specifications. \n" \
+            "You can will have the option to sorts our list of over 200 000 movies by genre, release dates, actors and ratings! You can continue" \
+            "filtering this list for as long as you desire \n "
+            "Lets Begin: How would like to start your filtering?\n")
+    
+
     while(True):
-        userIn = int(input("Please select an option for what you would like to do \n" \
-                        "[1] find movies by actor \n" \
-                        "[2] find actors by movie \n" \
-                        "[3] find movies by date \n"))
+        userIn = int(input(
+                        "Please choose from the following options and enter the number of your choise"   
+                        "[1] Get movies by genre. \n" \
+                        "[2] Get movies by release date. \n" \
+                        "[3] Get movies by actors. \n"\
+                        "[4] Get movies by ratings \n"
+                        " Please enter a number followed by enter \n"))
         
         match userIn:
             case 1:
@@ -30,13 +39,8 @@ def interactiveCLI():
                     continue
 
                 else:
-<<<<<<< HEAD
                     print(userIn)
                     print(dh.findActorMovies(data, newIn))
-=======
-                    print(dh.findActorsByMovie(data, newIn))
-                    
->>>>>>> 8b952208ac1d977e3ba5233ec0a720df8e946c55
 
 
 
