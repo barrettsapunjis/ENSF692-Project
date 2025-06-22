@@ -10,6 +10,9 @@ Expected dataset:
 | 5      | 2016     |inglorious bastards        ....            | {actor 1, actor 2}      |  { actress 1, actress 2}           |
 
 
+there is a possiblity that the actors can be made into a hierarchial key and do not need to be in a list. 
+
+
 
 
 - how to use:
@@ -24,10 +27,13 @@ Expected dataset:
     
 
 
+
+
 ```mermaid graph TD
 classDiagram
     class App {
         + data : dataframe
+
         + interactiveCLI() void
     }
     
@@ -44,4 +50,5 @@ classDiagram
     }
     
     App --> DataHandler : uses
+
 ```

@@ -1,7 +1,9 @@
 import dataHandler as dh
+
 import pandas as pd
 
 data = dh.constructData()
+
 
 
 #test finActorMovies()
@@ -17,3 +19,4 @@ print(f"{dh.getActorStats(data, 'rdj')}")
 print(f"{dh.getTotalStats(data)}")
 
 print(f"moviesForRatings(): {dh.getMoviesForRatings(data, 4)}")
+
