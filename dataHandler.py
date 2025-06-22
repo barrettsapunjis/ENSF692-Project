@@ -45,17 +45,7 @@ def constructData():
 
         finalData.to_pickle("finalData.pkl")
 
-    print(finalData)
-
-
-
-   # merge1 = pd.merge(movies, actors, on="movie", how="left")
-
-   # merge2 = pd.merge(merge1, ratings, on="movie", how="left")
-
-    #merge2['movie'] = merge2['movie'].astype(str)
-
-    #final = merge2.set_index(['title', 'actors'])
+        print(finalData)
 
     return finalData
 
