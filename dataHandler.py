@@ -4,7 +4,7 @@ import pandas as pd
 def constructData():
 
     try: 
-        finalData = pd.read_pickle("finalData.pkl")
+        finalData = pd.read_pickle("realData.pkl")
         print("pickle data found")
         read = True
 
@@ -17,9 +17,9 @@ def constructData():
     
     else:
 
-        actors = pd.read_excel("testData2/namesAliveCut.xlsx")
-        movies = pd.read_excel("testData2/titles2020.xlsx")
-        ratings = pd.read_excel("testData2/Ratings.xlsx")
+        actors = pd.read_csv("customData/namesActorActressOnly.csv")
+        movies = pd.read_csv("customData/titles1980.csv")
+        ratings = pd.read_csv("customData/Ratings.csv")
 
         #must explode the actors movie list into different columns
         actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
@@ -42,8 +42,8 @@ def constructData():
 
         finalData = movies.set_index(["averageRating", "startYear", "isAdult"])
     
-
-        finalData.to_pickle("finalData.pkl")
+        if read == False:
+            finalData.to_pickle("realData.pkl")
 
         print(finalData)
 
