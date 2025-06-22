@@ -17,7 +17,7 @@ def constructData():
     
     else:
 
-        actors = pd.read_excel("testData2/namesAliveCut.xlsx")
+        actors = pd.read_excel("customData/namesActorActressOnly.xlsx")
         movies = pd.read_excel("testData2/titles2020.xlsx")
         ratings = pd.read_excel("testData2/Ratings.xlsx")
 
