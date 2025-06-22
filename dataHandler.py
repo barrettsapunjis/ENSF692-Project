@@ -52,3 +52,29 @@ def getActorStats(data, actor):
     return statString
 
 
+
+def getMoviesForGenre(data, genre):
+    mask = data['genre'].str.lower() == genre.lower()
+    return data.loc[mask]
+
+def getMoviesForReleaseData(data, year1, year2):
+    mask = data['release'] > year1 & data['release'] < year2
+    return data.loc[mask]
+
+def getMoviesForRatings(data, rating):
+    mask = data['rating'] > rating
+    return data.loc[mask]
+
+def getMoviesForActorActress(data, actorActress):
+    #making all in the string lower for continuity -> will be much easier this way to match -> will do same in string
+    actorActressCaseInsensitive = actorActress.lower()
+    actorsString = data['actors'].apply( lambda actor : ','.join(actor) if isinstance(actor, list) else (actor if isinstance(actor, str) else '') )
+
+    mask = actorsString.str.lower().str.contains(actorActressCaseInsensitive)
+    return data.loc[mask]
+
+
+    
+
+
+
