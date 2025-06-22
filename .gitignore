@@ -1,3 +1,14 @@
 data
 venv
+
 __pycache__
+imdbData
+namesDataModifier.py
+ratingsDataModifier.py
+titlesDataModifier.py
+testData2/namesAliveCut.xlsx
+testData2/ratings.xlsx
+testData2/titles2020.xlsx
+
+
+

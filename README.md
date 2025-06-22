@@ -5,36 +5,50 @@ members: Marley Cheema, Barrett Sapunjis
 
 Expected dataset: 
 
-| Movie ID | Movie Name | Movie details.... | Actors | Actor details |
+| Rating | startYear | Movie details.... | ActorsList | ActressList|
 | -------- | ---------- | ----------------- | ------ | ------------- |
-| 1        | inglorious bastards     |10/10                    | {actor 1, actor 2}      |  { 1984 , 1990}           |
+| 5      | 2016     |inglorious bastards        ....            | {actor 1, actor 2}      |  { actress 1, actress 2}           |
+
 
 there is a possiblity that the actors can be made into a hierarchial key and do not need to be in a list. 
 
 
 
+
 - how to use:
    	- `pip install -r requirements.txt`
-   	- `python .\main.py`
+    - `make sure to download/acquire the data sets that are not posted on git`
+   	- `python .\app.py`
+
+- testing 
+    - point code to the testData2 folder instead and change the file name reference in the code. 
+    - test with smaller data set. 
+
+    
+
 
 
 
 ```mermaid graph TD
 classDiagram
     class App {
-        - df: DataFrame
+        + data : dataframe
+
         + interactiveCLI() void
     }
     
     class DataHandler {
         + constructData() DataFrame
-        + findActorMovies(data: DataFrame, actor: str) DataFrame
+        + findMoviesByActor(data: DataFrame, actor: str) DataFrame
+        + findActorsByMovie(data: DataFrame, movie: str) DataFrame
+        + getActorStats(data: DataFrame, actor: str) str
+        + getTotalStats(data: DataFrame) str
+        + getMoviesForGenre(data: DataFrame, genre: str) DataFrame
+        + getMoviesForReleaseData(data: DataFrame, year1: int, year2: int) DataFrame
+        + getMoviesForRatings(data: DataFrame, rating: float) DataFrame
+        + getMoviesForActorActress(data: DataFrame, actorActress: str) DataFrame
     }
     
-    class Main {
-        + main() void
-    }
-    
-    Main --> App
-    App --> DataHandler
+    App --> DataHandler : uses
+
 ```

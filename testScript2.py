@@ -1,6 +1,10 @@
 import dataHandler as dh
 
+import pandas as pd
+
 data = dh.constructData()
+
+
 
 #test finActorMovies()
 actorData = dh.findMoviesByActor(data, 'rdj')
@@ -13,3 +17,6 @@ print(f"'findActorsInMovie() : \n{movieData} \n ")
 print(f"{dh.getActorStats(data, 'rdj')}")
 
 print(f"{dh.getTotalStats(data)}")
+
+print(f"moviesForRatings(): {dh.getMoviesForRatings(data, 4)}")
+

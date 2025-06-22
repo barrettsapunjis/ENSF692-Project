@@ -2,26 +2,64 @@ import pandas as pd
 
 
 def constructData():
-    actors = pd.read_excel("testData/testActors.xlsx")
-    movies = pd.read_excel("testData/testMovies.xlsx")
-    ratings = pd.read_excel("testData/testRatings.xlsx")
 
-    merge1 = pd.merge(movies, actors, on="movie", how="left")
+    try: 
+        finalData = pd.read_pickle("finalData.pkl")
+        print("pickle data found")
+        read = True
 
-    merge2 = pd.merge(merge1, ratings, on="movie", how="left")
+    except Exception as e:
+        read = False
+        pass
 
-    merge2['movie'] = merge2['movie'].astype(str)
+    if read:
+        return finalData
+    
+    else:
 
-    final = merge2.set_index(['title', 'actors'])
+        actors = pd.read_excel("testData2/namesAliveCut.xlsx")
+        movies = pd.read_excel("testData2/titles2020.xlsx")
+        ratings = pd.read_excel("testData2/Ratings.xlsx")
 
-    return final
+        #must explode the actors movie list into different columns
+        actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
+        actors = actors.explode("knownForTitles")
+        actors["knownForTitles"] = actors["knownForTitles"].str.strip()
+
+        actors_only = actors[actors["primaryProfession"].str.contains("actor", case=False, na=False)]
+        actresses_only = actors[actors["primaryProfession"].str.contains("actress", case=False, na=False)]
+
+        actor_groups = actors_only.groupby("knownForTitles")["primaryName"].apply(list).reset_index()
+        actor_groups.columns = ["tconst", "actor_list"]
+
+        actress_groups = actresses_only.groupby("knownForTitles")["primaryName"].apply(list).reset_index()
+        actress_groups.columns = ["tconst", "actress_list"]
+
+        movies = movies.merge(actor_groups, on="tconst", how="left") \
+                .merge(actress_groups, on="tconst", how="left")
+        
+        movies = movies.merge(ratings, on="tconst", how='left' )
+
+        finalData = movies.set_index(["averageRating", "startYear", "isAdult"])
+    
+
+        finalData.to_pickle("finalData.pkl")
+
+        print(finalData)
+
+    return finalData
 
 
 def findMoviesByActor(data, actor):
+    actorName = actor.lower()
     print(f"\nselected actor {actor}\n")
-    moviesByActor = data.reset_index()
-    viewingData = moviesByActor.groupby("actors")
-    return viewingData.get_group(actor).reset_index(drop=True)
+
+    mask = (
+        data["actor_list"].apply(lambda actors: any(actorName == a.lower() for a in actors) if isinstance(actors, list) else False) |
+        data["actress_list"].apply(lambda actresses: any(actorName == a.lower() for a in actresses) if isinstance(actresses, list) else False)
+    )
+    return data[mask]
+
 
 def findActorsByMovie(data, movie):
     print(f"\nselected movie {movie}\n")
@@ -67,16 +105,19 @@ def getTotalStats(data):
 
 
 def getMoviesForGenre(data, genre):
-    mask = data['genre'].str.lower() == genre.lower()
-    return data.loc[mask]
+    dataClean = data.reset_index()
+    mask = dataClean['genre'].str.lower() == genre.lower()
+    return dataClean.loc[mask]
 
 def getMoviesForReleaseData(data, year1, year2):
-    mask = data['release'] > year1 & data['release'] < year2
-    return data.loc[mask]
+    dataClean = data.reset_index()
+    mask = dataClean['release'] > year1 & data['release'] < year2
+    return dataClean.loc[mask]
 
 def getMoviesForRatings(data, rating):
-    mask = data['rating'] > rating
-    return data.loc[mask]
+    dataClean = data.reset_index()
+    mask = dataClean['rating'] > rating
+    return dataClean.loc[mask]
 
 def getMoviesForActorActress(data, actorActress):
     #making all in the string lower for continuity -> will be much easier this way to match -> will do same in string
