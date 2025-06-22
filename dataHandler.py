@@ -12,45 +12,58 @@ def constructData():
 
     merge2['movie'] = merge2['movie'].astype(str)
 
-    return merge2
+    final = merge2.set_index(['title', 'actors'])
+
+    return final
 
 
 def findMoviesByActor(data, actor):
-    print(f"selected actor {actor}")
-    viewingData = data[['actors', 'movie', 'title']].groupby("actors")
+    print(f"\nselected actor {actor}\n")
+    moviesByActor = data.reset_index()
+    viewingData = moviesByActor.groupby("actors")
     return viewingData.get_group(actor).reset_index(drop=True)
 
 def findActorsByMovie(data, movie):
-
-    viewingData = data[['title', 'movie', 'actors']].groupby("title")
-
-    df = data.sort_values(by=["title", "movie"]).reset_index(drop=True)
-
-
-    viewingData = viewingData.get_group(movie).set_index(['title', 'movie', 'actors'])
-    
-    df = df[df['title'] == movie]
-        # Blank out duplicate 'title' and 'movie' except for first occurrence
-    df.loc[1:, 'title'] = df['title'].mask(df['title'] == df['title'].shift()).fillna('')
-    df.loc[1:, 'movie'] = df['movie'].mask(df['movie'] == df['movie'].shift()).fillna('')
-
-    return df.reset_index(drop=True)
+    print(f"\nselected movie {movie}\n")
+    actorsByMovie = data.loc[movie, :]
+    return actorsByMovie
 
 def getActorStats(data, actor):
+    print(f"\nselected actor {actor}\n")
     averageRating = 0
     maxRating = 0
     minRating = 0
 
-    df = data[data['actors'] == actor]
+    df = data.loc[:, actor, :]
+
 
     maxRating = float(df['rating'].max())
     minRating = float(df['rating'].min())
     averageRating = float(df['rating'].mean() )
 
-    statString = f"The maximum rating for the actor is: {maxRating}\nThe minimum rating is: {minRating}\nThe average rating is {averageRating}"
+    statString = (f"The maximum rating for the actor is: {maxRating}"
+                  f"\nThe minimum rating is: {minRating}"
+                  f"\nThe average rating is {averageRating}")
 
     return statString
 
+def getTotalStats(data):
+    print("\ngetting total stats\n")
+    numMovies = data.index.get_level_values('title').nunique()
+    numActors = data.index.get_level_values('actors').nunique()
+
+    highestRatedMovie = data['rating'].max()
+    lowestRatedMovie = data['rating'].min()
+
+    actorWithMostMovies = data.index.get_level_values('actors').value_counts().idxmax()
+
+    statString = (f"The total number of movies is: {numMovies}"
+                  f"\nThe total number of actors is: {numActors}"
+                  f"\nThe highest rated movie is: {highestRatedMovie}"
+                  f"\nThe lowest rated movie is: {lowestRatedMovie}"
+                  f"\nThe actor with the most movies is: {actorWithMostMovies}\n")
+
+    return statString
 
 
 def getMoviesForGenre(data, genre):

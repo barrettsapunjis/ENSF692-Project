@@ -11,3 +11,5 @@ print(f"findMoviesForActor(): \n{actorData} \n")
 movieData = dh.findActorsByMovie(data, 'Iron man')
 print(f"'findActorsInMovie() : \n{movieData} \n ")
 print(f"{dh.getActorStats(data, 'rdj')}")
+
+print(f"{dh.getTotalStats(data)}")

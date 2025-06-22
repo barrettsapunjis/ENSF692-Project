@@ -25,7 +25,7 @@ def interactiveCLI():
                 "Enter a number (1–4): "
             ))
         except ValueError:
-            print("❌ Invalid entry; please enter 1, 2, 3, or 4.")
+            print("Invalid entry; please enter 1, 2, 3, or 4.")
             continue
 
         # 3) Apply the selected filter
@@ -66,6 +66,7 @@ def interactiveCLI():
             if actor:
                 currentData = dh.getMoviesForActorActress(currentData, actor)
 
+
         elif userIn == 4:
             try:
                 rating = float(input("Enter minimum rating threshold (e.g. 7.5): ").strip())
@@ -76,6 +77,7 @@ def interactiveCLI():
         else:
             print("Invalid selection please enter a number between1–4.")
             continue
+
 
         #Updating count to user to help guide decision making -> whether or not they should keep filtering
         count = len(currentData)
