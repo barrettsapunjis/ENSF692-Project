@@ -18,3 +18,7 @@ print(dh.get_movies_for_release_date(data, 1980, 1985))
 print(dh.get_actor_stats(data, "Rupert Cole"))
 
 print(dh.describe(data))
+
+data, full_data, dataString = dh.get_user_data_analysis(data)
+print(data.reset_index())
+print(dataString)

@@ -11,5 +11,7 @@ testData2/ratings.xlsx
 testData2/titles2020.xlsx
 exportedData.xlsx
 projectOutline.md
-
-
+principalsDataModifier.py
+data.xlsx
+customData/ActorsWPrincipals.csv
+customData/principalsActorsActressesOnly.csv
