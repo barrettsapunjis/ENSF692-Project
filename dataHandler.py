@@ -327,7 +327,8 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
     
     pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'rating')
 
-    plt.figure()
+
+    plt.figure(figsize=(14,7))
     for genres in pivotGenreGroupColumns.columns:
         plt.plot(pivotGenreGroupColumns.index, pivotGenreGroupColumns[genres], marker = 'o', label=genres)
     plt.title("Average Movie Rating By Genre For Release Year")
@@ -380,14 +381,16 @@ def moviesByGenre(data):
     genreCount = dataExploded['genres'].value_counts()
     colours = sns.color_palette('husl', len(genreCount)) 
 
+    plt.figure(figsize=(14,7))
     bars = plt.bar(genreCount.index, genreCount.values, color = colours)   
 
     for i, bar in enumerate(bars):
         height = bar.get_height()    
         plt.text(bar.get_x() + bar.get_width()/2., height + 1000, f'{height:,}', ha='center', va='bottom', fontsize=8)
    
-    plt.figure()
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=45, ha='right', fontsize=10)  # rotate and align labels
+    plt.tight_layout()  # prevents label cutoff
+    
     plt.title("Number of Movies Released For Each Genre")
     plt.xlabel('Genre')
     plt.ylabel("Number of Movies Released")
@@ -420,15 +423,16 @@ def votesVsRating(data):
     #Now time to plot and include our linear regression
 
     plt.figure()
-    plt.scatter(log_votes, ratings, alpha =0.5)
+    plt.scatter(log_votes, ratings, alpha =0.1, s=10)
 
     #regression
     xRegression = np.linspace(log_votes.min(), log_votes.max(), 200)
     yRegression = m * xRegression + b
 
-    plt.plot(xRegression, yRegression, linestyle='--')
+    plt.plot(xRegression, yRegression, color ='purple', linestyle='--', linewidth=2,  label='Linear Fit')
     plt.xlabel('Number of Votes (Log Scale of 10)')
     plt.ylabel("Average rating")
+    plt.title("Ratings vs Number of Votes (Log Scale)", fontsize=14)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()

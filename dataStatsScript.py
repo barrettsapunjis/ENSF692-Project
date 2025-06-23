@@ -8,6 +8,11 @@ def main():
     print(data.columns)
     print(data.head(10))
 
+    print(len(data))
+    print(f"Rows: {data.shape[0]}, Columns: {data.shape[1]}")
+
+    print(data.shape)
+
     dH.averageRatingOfMoviesByYear(data)
 
     dH.averageRatingsRatingOfMoviesByYearAndGenre(data)
