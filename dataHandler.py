@@ -34,10 +34,32 @@ def construct_data():
         ratings = pd.read_csv("customData/Ratings.csv")
 
         #Actors pre-processing
-        #must explode the actors movie list into different columns
         actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
-        actors = actors.explode("knownForTitles")
-        actors["knownForTitles"] = actors["knownForTitles"].str.strip()
+        try:
+            principals = pd.read_csv("customData/prinicpalsActorsActressesOnly.csv")
+            #Add principals data to actor data to increase the number of movies they are connected to 
+            principals = principals.dropna(subset=["nconst", "tconst"])
+            principals_grouped = (
+                principals.groupby("nconst")["tconst"]
+                .apply(set)           # use set to remove duplicates
+                .reset_index()
+            )
+
+            actors = actors.merge(principals_grouped, on="nconst", how="left")
+
+            actors["knownForTitles"] = actors["knownForTitles"].fillna("").apply(
+                lambda x: set() if x == "" else x
+            )
+
+            actors["allMovies"] = actors.apply(
+                lambda row: list(set(row["knownForTitles"]) | (row["tconst"] if isinstance(row["tconst"], set) else set())), axis=1
+            )
+            actors = actors.drop(columns=["knownForTitles", "tconst"])
+            #must explode the actors movie list into different columns
+            actors = actors.explode("allMovies").reset_index()
+            actors["allMovies"] = actors["allMovies"].str.strip()
+        except Exception as e:
+            actors.rename(columns={'knownForTitles': 'allMovies'}, inplace=True)
 
         #Movies pre-processing
         movies['genres'] = movies['genres'].str.split(",")
@@ -46,15 +68,16 @@ def construct_data():
 
         #ratings pre-processing
         ratings['averageRating'] = ratings['averageRating'].astype(float)
+        ratings.rename(columns={'averageRating': 'rating'}, inplace=True)
         ratings['numVotes'] = ratings['numVotes'].astype(int)
 
         actors_only = actors[actors["primaryProfession"].str.contains("actor", case=False, na=False)]
         actresses_only = actors[actors["primaryProfession"].str.contains("actress", case=False, na=False)]
 
-        actor_groups = actors_only.groupby("knownForTitles")["primaryName"].apply(list).reset_index()
+        actor_groups = actors_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
         actor_groups.columns = ["tconst", "actor_list"]
 
-        actress_groups = actresses_only.groupby("knownForTitles")["primaryName"].apply(list).reset_index()
+        actress_groups = actresses_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
         actress_groups.columns = ["tconst", "actress_list"]
 
         movies = movies.merge(actor_groups, on="tconst", how="left") \
@@ -65,7 +88,7 @@ def construct_data():
         movies['startYear'] = movies['startYear'].astype(int)  # or some fill value
 
 
-        final_data = movies.set_index(["averageRating", "startYear"])
+        final_data = movies.set_index(["startYear", "primaryTitle"])
         
         add_columns(final_data)
     
@@ -78,6 +101,7 @@ def construct_data():
 
         return final_data
     
+
 def add_columns(data):
     data['knownCast'] = data['actor_list'] + data['actress_list']
     data['knownCast'] = data['knownCast'].apply(lambda x: len(x) if isinstance(x, list) else False)
@@ -107,7 +131,7 @@ def find_actors_by_movie(data, movie):
     Returns: DataFrame of actors
     """
     o_print(f"\nselected movie {movie}\n")
-    actors_by_movie = data[data['primaryTitle'].str.lower() == movie.lower()]
+    actors_by_movie = data[data.index.get_level_values('primaryTitle').str.lower() == movie.lower()]
     return actors_by_movie
 
 def get_actor_stats(data, actor):
@@ -124,11 +148,11 @@ def get_actor_stats(data, actor):
     df = find_movies_by_actor(data, actor)
 
 
-    max_rating = float(df.index.get_level_values('averageRating').max())
-    min_rating = float(df.index.get_level_values('averageRating').min())
+    max_rating = float(df['rating'].max())
+    min_rating = float(df['rating'].min())
 
-    ratings_list = df.index.get_level_values('averageRating').tolist()
-    average_rating = sum(ratings_list) / len(ratings_list)
+    average_rating = df['rating'].mean()
+    
 
     stat_string = (f"The maximum rating for the actor is: {max_rating}"
                   f"\nThe minimum rating is: {min_rating}"
@@ -149,15 +173,15 @@ def describe(datai):
     numActors = data.explode('actor_list')['actor_list'].nunique()
     numActresses = data.explode('actress_list')['actress_list'].nunique()
 
-    highestRating = data.index.get_level_values('averageRating').max()
-    highestRatedMovies = data.loc[highestRating].reset_index()
+    highestRating = data['rating'].max()
+    highestRatedMovies = data[data['rating'] == highestRating].reset_index()
 
-    lowestRating = data.index.get_level_values('averageRating').min()
-    lowestRatedMovies = data.loc[lowestRating].reset_index()
+    lowestRating = data['rating'].min()
+    lowestRatedMovies = data[data['rating'] == lowestRating].reset_index()
 
 
 
-    pivot = data.reset_index().pivot_table(index="startYear", values=["averageRating", "tconst", "numVotes"], aggfunc={"averageRating" : "mean", "tconst" : "count", "numVotes" : "sum"})
+    pivot = data.reset_index().pivot_table(index="startYear", values=["rating", "tconst", "numVotes"], aggfunc={"rating" : "mean", "tconst" : "count", "numVotes" : "sum"})
     #renamoing pivot table column name 'tconst' to 'numMovies'
     pivot.rename(columns={'tconst': 'numMovies'}, inplace=True)
 
@@ -220,7 +244,7 @@ def get_movies_for_ratings(data, rating):
     Returns: DataFrame of movies
     """
     o_print(f"\ngetting movies for ratings {rating}\n")
-    mask = data.index.get_level_values("averageRating") > rating
+    mask = data['rating'] > rating
     return data[mask]
 
 def get_movies_for_actor_actress(data, actorActress):
@@ -253,8 +277,28 @@ def printPivot(data):
     #pivot = data.pivot_table(index="primaryTitle", columns)
     pass
 
+def get_user_data_analysis(datai):
+    data = datai.copy()
+    average_data_rating = data['rating'].mean()
+    average_runtime = data['runtimeMinutes'].astype(float).mean()
+    
+    data['ratingDelta'] = data['rating'].astype(float) - average_data_rating
+    data['runtimeDelta'] = data['runtimeMinutes'].astype(float) - average_runtime
+    full_data = data
+    short_data = data.drop(columns=['tconst', 'originalTitle', 'endYear', 'actor_list', 'actress_list', 'genres'])
+
+
+    outputString = (f"\nThe below stats are based on the above filtered data\n"
+                    f"\nTotal number of movies: {data['rating'].shape[0]}\n"
+                    f"Average movie rating is: {average_data_rating:.2f}\n"
+                    f"Average movie runtime is: {average_runtime:.2f} minutes\n"
+                    f"Average number of votes per movie is: {data['numVotes'].mean():.2f}\n")
+    
+    return short_data, full_data, outputString
+
 def export_data(data):
     data.to_excel("data.xlsx")
+    return "completed"
     
 
 
