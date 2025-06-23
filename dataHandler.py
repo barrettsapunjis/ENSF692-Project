@@ -6,6 +6,9 @@ Description: Data handling functions for movie database analysis
 """
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
 o_print_on = True
 
@@ -295,6 +298,154 @@ def get_user_data_analysis(datai):
                     f"Average number of votes per movie is: {data['numVotes'].mean():.2f}\n")
     
     return short_data, full_data, outputString
+
+
+def averageRatingOfMoviesByYear(data):
+    
+    data = data.reset_index()
+
+    averageByYear = data.groupby('startYear')['rating'].mean()
+
+    plt.figure()
+    plt.scatter(averageByYear.index.astype(int), averageByYear.values)
+    plt.title("Average Movie Rating Based On Year of Release")
+    plt.xlabel("Release Year")
+    plt.ylabel("Average Rating")
+    plt.show()
+   
+
+def averageRatingsRatingOfMoviesByYearAndGenre(data):
+    
+    data = data.reset_index()[["startYear","rating","genres"]]
+    data = data.explode("genres").dropna(subset=["genres","rating"])
+
+    #Realized way to many genres -> and made graph look off, so decided just to keep top 10 genres!
+    top_genres = data['genres'].value_counts().nlargest(10).index
+    data = data[data['genres'].isin(top_genres)]
+                                     
+    genreGroupsYear = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
+    
+    pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'rating')
+
+
+    plt.figure(figsize=(14,7))
+    for genres in pivotGenreGroupColumns.columns:
+        plt.plot(pivotGenreGroupColumns.index, pivotGenreGroupColumns[genres], marker = 'o', label=genres)
+    plt.title("Average Movie Rating By Genre For Release Year")
+    plt.xlabel("Year")
+    plt.ylabel("Average Rating")
+    plt.legend(title="Genre")
+    plt.show()
+
+
+def topActorsByRating(data):
+    dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
+
+    actorRatingData = dataReset[['rating', 'actor_list']].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+
+    #now also want to clean up my actor list to ensure that different cases wont mess anything up
+    actorRatingData['actor_list'] = actorRatingData['actor_list'].str.strip().str.title()
+
+    topActorPivotTable = pd.pivot_table(actorRatingData, index = 'actor_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
+
+    topActorPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
+
+    topActorPivotTable = topActorPivotTable[topActorPivotTable['Number of Movies'] >= 10]
+
+    topActorPivotTable = topActorPivotTable.sort_values('Average Rating Across Movies', ascending = False).head(10)
+
+    return topActorPivotTable
+
+def topActressesByRating(data):
+    
+    dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
+
+    actressRatingData = dataReset[['rating', 'actress_list']].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+
+    #now also want to clean up my actor list to ensure that different cases wont mess anything up
+    actressRatingData['actress_list'] = actressRatingData['actress_list'].str.strip().str.title()
+
+    topActressPivotTable = pd.pivot_table(actressRatingData, index = 'actress_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
+
+    topActressPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
+
+    topActressPivotTable = topActressPivotTable[topActressPivotTable['Number of Movies'] >= 10]
+
+    topActressPivotTable = topActressPivotTable.sort_values('Average Rating Across Movies', ascending = False).head(10)
+
+    return topActressPivotTable
+
+def moviesByGenre(data):
+    
+    dataExploded = data.explode('genres')
+    genreCount = dataExploded['genres'].value_counts()
+    colours = sns.color_palette('husl', len(genreCount)) 
+
+    plt.figure(figsize=(14,7))
+    bars = plt.bar(genreCount.index, genreCount.values, color = colours)   
+
+    for i, bar in enumerate(bars):
+        height = bar.get_height()    
+        plt.text(bar.get_x() + bar.get_width()/2., height + 1000, f'{height:,}', ha='center', va='bottom', fontsize=8)
+   
+    plt.xticks(rotation=45, ha='right', fontsize=10)  # rotate and align labels
+    plt.tight_layout()  # prevents label cutoff
+    
+    plt.title("Number of Movies Released For Each Genre")
+    plt.xlabel('Genre')
+    plt.ylabel("Number of Movies Released")
+    plt.tight_layout()
+    plt.show()
+
+#this function is using a linear regression (simple on that ordinary least-squares) to see if there is a connection between number of votes and rating as:
+
+#Hypothesis
+#number of votes and rating as whole. I would assume the more votes a movie gets generally its rating would be lower -> 
+# as more subjected to critics from the masses where as more niche movies generally just have people who enjoy the genre/actor ect viewing them and voting which probably would be more positive in light
+
+#Slope of the regression whether negative or positive will tell us the relationship
+def votesVsRating(data):
+
+    data = data[['numVotes', 'rating']].dropna()
+    ratings = data['rating'].astype(float)
+    votes = data['numVotes'].astype(int).values
+
+
+    #going to log transform (shout out to ChatGPT to help me realize that this needed -> to ensure votes need the same skew, also to add plus one to avoid log of 0, so helpful for debugging!!)
+    # as there is such a range of votes with movies it will make the axises look super skewed and hard to interpret -> plus for a regression need to be on same scale
+    
+    
+    log_votes = np.log10(votes + 1)
+
+    #fitting our data and creating the line of best fit based on the all the points!
+    m, b = np.polyfit(log_votes, ratings, 1)
+
+    #Now time to plot and include our linear regression
+
+    plt.figure()
+    plt.scatter(log_votes, ratings, alpha =0.1, s=10)
+
+    #regression
+    xRegression = np.linspace(log_votes.min(), log_votes.max(), 200)
+    yRegression = m * xRegression + b
+
+    plt.plot(xRegression, yRegression, color ='purple', linestyle='--', linewidth=2,  label='Linear Fit')
+    plt.xlabel('Number of Votes (Log Scale of 10)')
+    plt.ylabel("Average rating")
+    plt.title("Ratings vs Number of Votes (Log Scale)", fontsize=14)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    y_pred = m * log_votes + b
+    ss_res = ((ratings - y_pred) ** 2).sum()
+    ss_tot = ((ratings - ratings.mean())**2).sum()
+    r2 = 1 - ss_res/ss_tot
+    print(f"Slope (m): {m}")
+    print(f"Intercept (b): {b}")
+    print(f"R² = {r2:.3f}")
+
 
 def export_data(data):
     data.to_excel("data.xlsx")
