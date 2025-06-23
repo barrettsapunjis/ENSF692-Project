@@ -300,12 +300,10 @@ def get_user_data_analysis(datai):
 
 
 def averageRatingOfMoviesByYear(data):
-    yearsGroup = data.groupby("startYear")
-    ratingsGroup = data.groupby("rating")
+    
+    data = data.reset_index()
 
-    #going to build a series now
-    seriesYearsRatings = pd.Series(data=ratingsGroup, index = yearsGroup)
-    averageByYear = seriesYearsRatings.groupby(level=0).mean()
+    averageByYear = data.groupby('startYear')['rating'].mean()
 
     plt.figure()
     plt.scatter(averageByYear.index.astype(int), averageByYear.values)
@@ -314,8 +312,13 @@ def averageRatingOfMoviesByYear(data):
     plt.show()
 
 def averageRatingsRatingOfMoviesByYearAndGenre(data):
+    
+    data = data.reset_index()[["startYear","rating","genres"]]
+    data = data.explode("genres").dropna(subset=["genres","rating"])
+                                     
     genreGroupsYear = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
-    pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'ratings')
+    
+    pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'rating')
 
     plt.figure()
     for genres in pivotGenreGroupColumns.columns:

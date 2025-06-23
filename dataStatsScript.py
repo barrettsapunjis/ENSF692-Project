@@ -3,16 +3,20 @@ import matplotlib.pyplot as plt
 import dataHandler as dH
 import numpy as np
 
-data = dH.construct_data()
-print(data.columns)
-print(data.head(10))
+def main():
+    data = dH.construct_data()
+    print(data.columns)
+    print(data.head(10))
 
-dH.averageRatingOfMoviesByYear(data)
+    dH.averageRatingOfMoviesByYear(data)
 
-dH.averageRatingsRatingOfMoviesByYearAndGenre(data)
+    dH.averageRatingsRatingOfMoviesByYearAndGenre(data)
 
-print(dH.topActorsByRating(data))
-print(dH.topActressesByRating(data))
+    print(dH.topActorsByRating(data))
+    print(dH.topActressesByRating(data))
 
-dH.moviesByGenre(data)
-dH.votesVsRating(data)
+    dH.moviesByGenre(data)
+    dH.votesVsRating(data)
+
+if __name__ == "__main__":
+    main()
