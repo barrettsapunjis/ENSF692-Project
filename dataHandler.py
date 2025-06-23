@@ -332,7 +332,7 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
 def topActorsByRating(data):
     dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
 
-    actorRatingData = dataReset['rating', 'actor_list'].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    actorRatingData = dataReset[['rating', 'actor_list']].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
     actorRatingData['actor_list'] = actorRatingData['actor_list'].str.strip().str.title()
@@ -350,7 +350,7 @@ def topActorsByRating(data):
 def topActressesByRating(data):
     dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
 
-    actressRatingData = dataReset['rating', 'actress_list'].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    actressRatingData = dataReset[['rating', 'actress_list']].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
     actressRatingData['actress_list'] = actressRatingData['actress_list'].str.strip().str.title()
