@@ -6,7 +6,8 @@ Description: Data handling functions for movie database analysis
 """
 
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
+import numpy as np
 
 o_print_on = True
 
@@ -314,7 +315,7 @@ def averageRatingOfMoviesByYear(data):
 
 def averageRatingsRatingOfMoviesByYearAndGenre(data):
     genreGroupsYear = data.groupby(['genres', 'startYear'])['averageRating'].mean().reset_index()
-    pivotGenreGroupColumns = genreGroupYears.pivot(index = 'startYear', columns = 'genres', values = 'ratings')
+    pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'ratings')
 
     plt.figure()
     for genres in pivotGenreGroupColumns.columns:
@@ -331,7 +332,7 @@ def topActorsByRating(data):
     actorRatingData = dataReset['averageRating', 'actor_list'].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
-    actorRatingData['actor_list'] = actorRatingData[].str.strip().str.title()
+    actorRatingData['actor_list'] = actorRatingData['actor_list'].str.strip().str.title()
 
     topActorPivotTable = pd.pivot_table(actorRatingData, index = 'actor_list', values = 'averageRating', aggfunc={'averageRating': ['count', 'mean']})
 
@@ -349,7 +350,7 @@ def topActressesByRating(data):
     actressRatingData = dataReset['averageRating', 'actress_list'].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
-    actressRatingData['actress_list'] = actressRatingData[].str.strip().str.title()
+    actressRatingData['actress_list'] = actressRatingData['actress_list'].str.strip().str.title()
 
     topActressPivotTable = pd.pivot_table(actressRatingData, index = 'actress_list', values = 'averageRating', aggfunc={'averageRating': ['count', 'mean']})
 
@@ -393,7 +394,7 @@ def votesVsRating(data):
     #Now time to plot and include our linear regression
 
     plt.figure()
-    plt.scatter(log_votes, ratings, alpha =0 .5)
+    plt.scatter(log_votes, ratings, alpha =0.5)
 
     #regression
     xRegression = np.linspace(log_votes.min(), log_votes.max(), 200)
