@@ -318,6 +318,10 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
     
     data = data.reset_index()[["startYear","rating","genres"]]
     data = data.explode("genres").dropna(subset=["genres","rating"])
+
+    #Realized way to many genres -> and made graph look off, so decided just to keep top 10 genres!
+    top_genres = data['genres'].value_counts().nlargest(10).index
+    data = data[data['genres'].isin(top_genres)]
                                      
     genreGroupsYear = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
     
@@ -374,14 +378,14 @@ def moviesByGenre(data):
     
     dataExploded = data.explode('genres')
     genreCount = dataExploded['genres'].value_counts()
-    colours = sns.color_palette('husl', len(genre_counts)) 
+    colours = sns.color_palette('husl', len(genreCount)) 
 
-    plt.bar(genreCount.index, genreCount.values, color = colours)   
-    
+    bars = plt.bar(genreCount.index, genreCount.values, color = colours)   
+
     for i, bar in enumerate(bars):
-    height = bar.get_height()
-    
-    plt.text(bar.get_x() + bar.get_width()/2., height + 1000, f'{height:,}', ha='center', va='bottom', fontsize=8)
+        height = bar.get_height()    
+        plt.text(bar.get_x() + bar.get_width()/2., height + 1000, f'{height:,}', ha='center', va='bottom', fontsize=8)
+   
     plt.figure()
     plt.xticks(rotation=45, ha='right')
     plt.title("Number of Movies Released For Each Genre")
@@ -399,11 +403,15 @@ def moviesByGenre(data):
 #Slope of the regression whether negative or positive will tell us the relationship
 def votesVsRating(data):
 
+    data = data[['numVotes', 'rating']].dropna()
     ratings = data['rating'].astype(float)
     votes = data['numVotes'].astype(int).values
 
+
     #going to log transform (shout out to ChatGPT to help me realize that this needed -> to ensure votes need the same skew, also to add plus one to avoid log of 0, so helpful for debugging!!)
     # as there is such a range of votes with movies it will make the axises look super skewed and hard to interpret -> plus for a regression need to be on same scale
+    
+    
     log_votes = np.log10(votes + 1)
 
     #fitting our data and creating the line of best fit based on the all the points!
@@ -430,6 +438,8 @@ def votesVsRating(data):
     ss_res = ((ratings - y_pred) ** 2).sum()
     ss_tot = ((ratings - ratings.mean())**2).sum()
     r2 = 1 - ss_res/ss_tot
+    print(f"Slope (m): {m}")
+    print(f"Intercept (b): {b}")
     print(f"R² = {r2:.3f}")
 
 
