@@ -1,9 +1,20 @@
+"""
+ENSF 692 Spring 2025 - Final Project
+Movie Database Analysis System - Main Application
+Authors: Marley Cheema, Barrett Sapunjis
+Description: Interactive CLI for movie database queries
+"""
+
 import pandas as pd
 import dataHandler as dh
 
 
 def interactiveCLI():
-    data = dh.constructData()
+    """
+    Main interactive command-line interface for movie database queries.
+    Provides filtering options by genre, release date, actor/actress, and ratings.
+    """
+    data = dh.construct_data()
     currentData = data
 
     print("Hello! Welcome to The Movie Catalog. You wil have the ability to get a list of movies that match your specifications. \n" \
@@ -32,7 +43,7 @@ def interactiveCLI():
         if userIn == 1:
             genre = input("Enter a genre to filter by: ").strip()
             if genre:
-                currentData = dh.getMoviesForGenre(currentData, genre)
+                currentData = dh.get_movies_for_genre(currentData, genre)
 
         elif userIn == 2:
             newIn = input(f"You have selected option [{userIn}]: Get movies by release date. \n" \
@@ -45,18 +56,18 @@ def interactiveCLI():
                 year = input("Please enter the year that you like to only see movies released after that date (not including): ").strip()
                 year1 = year
                 year2 = 2030
-                currentData = dh.getMoviesForReleaseDate(currentData, year1, year2)
+                currentData = dh.get_movies_for_release_date(currentData, year1, year2)
         
             elif releaseDateOption == "2":
                 year = input("Please enter the year that you like to only see movies released before that date (not including):  ").strip()
                 year1 = 0
                 year2 = year
-                currentData = dh.getMoviesForReleaseDate(currentData, year1, year2)
+                currentData = dh.get_movies_for_release_date(currentData, year1, year2)
 
             elif releaseDateOption == "3":
                 year1 = input("Please enter the year you would like for your lower limit (not including) ").strip()
                 year2   = input("Please enter the year you would like for your upper limit (not including)").strip()
-                currentData = dh.getMoviesForReleaseDate(currentData, year1, year2)
+                currentData = dh.get_movies_for_release_date(currentData, year1, year2)
             
             else:
                 print("Invalid option; no date filter applied.")
@@ -64,13 +75,13 @@ def interactiveCLI():
         elif userIn == 3:
             actor = input("Enter actor/actress name to filter by: ").strip()
             if actor:
-                currentData = dh.getMoviesForActorActress(currentData, actor)
+                currentData = dh.find_movies_by_actor(currentData, actor)
 
 
         elif userIn == 4:
             try:
                 rating = float(input("Enter minimum rating threshold (e.g. 7.5): ").strip())
-                currentData = dh.getMoviesForRatings(currentData, rating)
+                currentData = dh.get_movies_for_ratings(currentData, rating)
             except ValueError:
                 print("Invalid rating; please enter a number like 7.5.")
 
@@ -94,12 +105,14 @@ def interactiveCLI():
 
     # 6) Final output
     if count > 0:
-        print("\n🎬 Here’s your final list:")
+        print("\n🎬 Here's your final list:")
         print(
             currentData
-              .loc[:, ['title','release_date','genre','actors','rating']]
-              .to_string(index=False)
         )
+        
+        print(dh.describe(currentData))
+
+        dh.export_data(currentData)
     
 if __name__ == '__main__':
     interactiveCLI()

@@ -1,18 +1,20 @@
 import dataHandler as dh
 import pandas as pd
 
-data = dh.constructData()
+data = dh.construct_data()
 
-print(dh.findMoviesByActor(data, "Rupert Cole"))
+print(dh.find_movies_by_actor(data, "Rupert Cole"))
 
-print(dh.findActorsByMovie(data, "Iron Man"))
+print(dh.find_actors_by_movie(data, "Iron Man"))
 
 
-print(dh.getGenres(data))
-print(dh.getMoviesForGenre(data, "Action"))
+print(dh.get_genres(data))
+print(dh.get_movies_for_genre(data, "Action"))
 
-print(dh.getMoviesForRatings(data, 8.0))
+print(dh.get_movies_for_ratings(data, 8.0))
 
-print(dh.getMoviesForReleaseData(data, 1980, 1985))
+print(dh.get_movies_for_release_date(data, 1980, 1985))
 
-print(dh.getTotalStats(data))
+print(dh.get_actor_stats(data, "Rupert Cole"))
+
+print(dh.describe(data))
