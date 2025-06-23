@@ -1,5 +1,6 @@
 import pandas as pd
 
+oPrintOn = True
 
 def constructData():
 
@@ -21,10 +22,18 @@ def constructData():
         movies = pd.read_csv("customData/titles1980.csv")
         ratings = pd.read_csv("customData/Ratings.csv")
 
+        #Actors pre-processing
         #must explode the actors movie list into different columns
         actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
         actors = actors.explode("knownForTitles")
         actors["knownForTitles"] = actors["knownForTitles"].str.strip()
+
+        #Movies pre-processing
+        movies['genres'] = movies['genres'].str.split(",")
+
+        #ratings pre-processing
+        ratings['averageRating'] = ratings['averageRating'].astype(float)
+        ratings['numVotes'] = ratings['numVotes'].astype(int)
 
         actors_only = actors[actors["primaryProfession"].str.contains("actor", case=False, na=False)]
         actresses_only = actors[actors["primaryProfession"].str.contains("actress", case=False, na=False)]
@@ -39,8 +48,14 @@ def constructData():
                 .merge(actress_groups, on="tconst", how="left")
         
         movies = movies.merge(ratings, on="tconst", how='left' )
+        movies['startYear'] = movies['startYear'].fillna(0).astype(int)  # or some fill value
+        movies['startYear'] = movies['startYear'].astype(int)  # or some fill value
+
 
         finalData = movies.set_index(["averageRating", "startYear", "isAdult"])
+        
+
+        print(finalData)
     
         if read == False:
             finalData.to_pickle("realData.pkl")
@@ -51,23 +66,24 @@ def constructData():
 
 
 def findMoviesByActor(data, actor):
+    oPrint(f"\nselected actor {actor}\n")
     actorName = actor.lower()
-    print(f"\nselected actor {actor}\n")
+    newData = data.copy()
+    newData['combined_list'] = newData['actor_list'] + newData['actress_list']
+    #data = data.drop(columns=['actor_list',"actress_list"])
+    exploded = newData.explode('combined_list')
 
-    mask = (
-        data["actor_list"].apply(lambda actors: any(actorName == a.lower() for a in actors) if isinstance(actors, list) else False) |
-        data["actress_list"].apply(lambda actresses: any(actorName == a.lower() for a in actresses) if isinstance(actresses, list) else False)
-    )
-    return data[mask]
+    actorsMovies = exploded[exploded['combined_list'].str.lower() == actor.lower()].drop(columns=['combined_list'])
+    return actorsMovies
 
 
 def findActorsByMovie(data, movie):
-    print(f"\nselected movie {movie}\n")
-    actorsByMovie = data.loc[movie, :]
+    oPrint(f"\nselected movie {movie}\n")
+    actorsByMovie = data[data['primaryTitle'].str.lower() == movie.lower()]
     return actorsByMovie
 
 def getActorStats(data, actor):
-    print(f"\nselected actor {actor}\n")
+    oPrint(f"\nselected actor {actor}\n")
     averageRating = 0
     maxRating = 0
     minRating = 0
@@ -86,38 +102,55 @@ def getActorStats(data, actor):
     return statString
 
 def getTotalStats(data):
-    print("\ngetting total stats\n")
-    numMovies = data.index.get_level_values('title').nunique()
-    numActors = data.index.get_level_values('actors').nunique()
+    oPrint("\ngetting total stats\n")
+    numMovies = data['tconst'].shape[0]
 
-    highestRatedMovie = data['rating'].max()
-    lowestRatedMovie = data['rating'].min()
+    numActors = data.explode('actor_list')['actor_list'].nunique()
+    numActresses = data.explode('actress_list')['actress_list'].nunique()
 
-    actorWithMostMovies = data.index.get_level_values('actors').value_counts().idxmax()
+    highestRating = data.index.get_level_values('averageRating').max()
+    highestRatedMovies = data.loc[highestRating]
+
+    lowestRating = data.index.get_level_values('averageRating').min()
+    lowestRatedMovies = data.loc[lowestRating]
+
 
     statString = (f"The total number of movies is: {numMovies}"
                   f"\nThe total number of actors is: {numActors}"
-                  f"\nThe highest rated movie is: {highestRatedMovie}"
-                  f"\nThe lowest rated movie is: {lowestRatedMovie}"
-                  f"\nThe actor with the most movies is: {actorWithMostMovies}\n")
+                  f"\nThe highest rated movie is: {highestRatedMovies}"
+                  f"\nThe lowest rated movie is:\n{lowestRatedMovies}"
+                  f"\nThe column names are: {data.columns}")
 
     return statString
 
 
 def getMoviesForGenre(data, genre):
-    dataClean = data.reset_index()
-    mask = dataClean['genre'].str.lower() == genre.lower()
-    return dataClean.loc[mask]
+    oPrint(f"\ngetting movies for genre {genre}\n")
+    mask = data['genres'].apply(lambda x: any(genre.lower() == g.lower() for g in x) if isinstance(x, list) else False )
+    return data.loc[mask]
 
-def getMoviesForReleaseData(data, year1, year2):
+def getGenres(data):
+    oPrint("\ngetting genres\n")
     dataClean = data.reset_index()
-    mask = dataClean['release'] > year1 & data['release'] < year2
-    return dataClean.loc[mask]
+    genres = dataClean.explode('genres')['genres'].unique()
+    return genres
+
+def getMoviesForReleaseData(data, year1, year2=None):
+    oPrint(f"\ngetting movies for release data {year1} to {year2}\n")
+    if year2 is None:
+        mask = data.index.get_level_values("startYear") == year1
+    else:
+        mask = (
+            (data.index.get_level_values("startYear") > year1) & 
+            (data.index.get_level_values("startYear") < year2)
+            )
+    
+    return data[mask]
 
 def getMoviesForRatings(data, rating):
-    dataClean = data.reset_index()
-    mask = dataClean['rating'] > rating
-    return dataClean.loc[mask]
+    oPrint(f"\ngetting movies for ratings {rating}\n")
+    mask = data.index.get_level_values("averageRating") > rating
+    return data[mask]
 
 def getMoviesForActorActress(data, actorActress):
     #making all in the string lower for continuity -> will be much easier this way to match -> will do same in string
@@ -127,6 +160,12 @@ def getMoviesForActorActress(data, actorActress):
     mask = actorsString.str.lower().str.contains(actorActressCaseInsensitive)
     return data.loc[mask]
 
+
+def oPrint(data):
+    if oPrintOn == True:
+        print(data)
+    else:
+        pass
 
     
 
