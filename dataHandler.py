@@ -301,7 +301,7 @@ def get_user_data_analysis(datai):
 
 def averageRatingOfMoviesByYear(data):
     yearsGroup = data.groupby("startYear")
-    ratingsGroup = data.groupby("averageRating")
+    ratingsGroup = data.groupby("rating")
 
     #going to build a series now
     seriesYearsRatings = pd.Series(data=ratingsGroup, index = yearsGroup)
@@ -314,7 +314,7 @@ def averageRatingOfMoviesByYear(data):
     plt.show()
 
 def averageRatingsRatingOfMoviesByYearAndGenre(data):
-    genreGroupsYear = data.groupby(['genres', 'startYear'])['averageRating'].mean().reset_index()
+    genreGroupsYear = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
     pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'ratings')
 
     plt.figure()
@@ -329,12 +329,12 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
 def topActorsByRating(data):
     dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
 
-    actorRatingData = dataReset['averageRating', 'actor_list'].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    actorRatingData = dataReset['rating', 'actor_list'].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
     actorRatingData['actor_list'] = actorRatingData['actor_list'].str.strip().str.title()
 
-    topActorPivotTable = pd.pivot_table(actorRatingData, index = 'actor_list', values = 'averageRating', aggfunc={'averageRating': ['count', 'mean']})
+    topActorPivotTable = pd.pivot_table(actorRatingData, index = 'actor_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
 
     topActorPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
 
@@ -347,12 +347,12 @@ def topActorsByRating(data):
 def topActressesByRating(data):
     dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
 
-    actressRatingData = dataReset['averageRating', 'actress_list'].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    actressRatingData = dataReset['rating', 'actress_list'].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
 
     #now also want to clean up my actor list to ensure that different cases wont mess anything up
     actressRatingData['actress_list'] = actressRatingData['actress_list'].str.strip().str.title()
 
-    topActressPivotTable = pd.pivot_table(actressRatingData, index = 'actress_list', values = 'averageRating', aggfunc={'averageRating': ['count', 'mean']})
+    topActressPivotTable = pd.pivot_table(actressRatingData, index = 'actress_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
 
     topActressPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
 
@@ -381,7 +381,7 @@ def moviesByGenre(data):
 #Slope of the regression whether negative or positive will tell us the relationship
 def votesVsRating(data):
 
-    ratings = data.index.get_level_values('averageRating').astype(float)
+    ratings = data.index.get_level_values('rating').astype(float)
     votes = data['numVotes'].astype(int).values
 
     #going to log transform (shout out to ChatGPT to help me realize that this needed -> to ensure votes need the same skew, also to add plus one to avoid log of 0, so helpful for debugging!!)
