@@ -4,6 +4,8 @@ import dataHandler as dH
 import numpy as np
 
 data = dH.construct_data()
+print(data.columns)
+print(data.head(10))
 
 dH.averageRatingOfMoviesByYear(data)
 
