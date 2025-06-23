@@ -8,6 +8,7 @@ Description: Data handling functions for movie database analysis
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 o_print_on = True
 
@@ -307,9 +308,11 @@ def averageRatingOfMoviesByYear(data):
 
     plt.figure()
     plt.scatter(averageByYear.index.astype(int), averageByYear.values)
-    plt.xlabel("Year")
+    plt.title("Average Movie Rating Based On Year of Release")
+    plt.xlabel("Release Year")
     plt.ylabel("Average Rating")
     plt.show()
+   
 
 def averageRatingsRatingOfMoviesByYearAndGenre(data):
     
@@ -323,6 +326,7 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
     plt.figure()
     for genres in pivotGenreGroupColumns.columns:
         plt.plot(pivotGenreGroupColumns.index, pivotGenreGroupColumns[genres], marker = 'o', label=genres)
+    plt.title("Average Movie Rating By Genre For Release Year")
     plt.xlabel("Year")
     plt.ylabel("Average Rating")
     plt.legend(title="Genre")
@@ -348,6 +352,7 @@ def topActorsByRating(data):
     return topActorPivotTable
 
 def topActressesByRating(data):
+    
     dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
 
     actressRatingData = dataReset[['rating', 'actress_list']].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
@@ -366,10 +371,20 @@ def topActressesByRating(data):
     return topActressPivotTable
 
 def moviesByGenre(data):
+    
+    dataExploded = data.explode('genres')
+    genreCount = dataExploded['genres'].value_counts()
+    colours = sns.color_palette('husl', len(genre_counts)) 
 
-    genreCount = data['genres'].value_counts()
+    plt.bar(genreCount.index, genreCount.values, color = colours)   
+    
+    for i, bar in enumerate(bars):
+    height = bar.get_height()
+    
+    plt.text(bar.get_x() + bar.get_width()/2., height + 1000, f'{height:,}', ha='center', va='bottom', fontsize=8)
     plt.figure()
-    plt.bar(genreCount.index, genreCount.values)
+    plt.xticks(rotation=45, ha='right')
+    plt.title("Number of Movies Released For Each Genre")
     plt.xlabel('Genre')
     plt.ylabel("Number of Movies Released")
     plt.tight_layout()
@@ -384,7 +399,7 @@ def moviesByGenre(data):
 #Slope of the regression whether negative or positive will tell us the relationship
 def votesVsRating(data):
 
-    ratings = data.index.get_level_values('rating').astype(float)
+    ratings = data['rating'].astype(float)
     votes = data['numVotes'].astype(int).values
 
     #going to log transform (shout out to ChatGPT to help me realize that this needed -> to ensure votes need the same skew, also to add plus one to avoid log of 0, so helpful for debugging!!)
@@ -411,8 +426,8 @@ def votesVsRating(data):
     plt.tight_layout()
     plt.show()
 
-    y_pred = m*log_votes + b
-    ss_res = ((ratings - y_pred)**2).sum()
+    y_pred = m * log_votes + b
+    ss_res = ((ratings - y_pred) ** 2).sum()
     ss_tot = ((ratings - ratings.mean())**2).sum()
     r2 = 1 - ss_res/ss_tot
     print(f"R² = {r2:.3f}")
