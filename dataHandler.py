@@ -1,11 +1,22 @@
+"""
+ENSF 692 Spring 2025 - Final Project
+Movie Database Analysis System
+Authors: Marley Cheema, Barrett Sapunjis
+Description: Data handling functions for movie database analysis
+"""
+
 import pandas as pd
 
-oPrintOn = True
+o_print_on = True
 
-def constructData():
 
+def construct_data():
+    """
+    Constructs and returns the main movie dataset.
+    Returns: DataFrame with hierarchical index
+    """
     try: 
-        finalData = pd.read_pickle("realData.pkl")
+        final_data = pd.read_pickle("realData.pkl")
         print("pickle data found")
         read = True
 
@@ -14,7 +25,7 @@ def constructData():
         pass
 
     if read:
-        return finalData
+        return final_data
     
     else:
 
@@ -30,6 +41,8 @@ def constructData():
 
         #Movies pre-processing
         movies['genres'] = movies['genres'].str.split(",")
+        movies = movies.drop(columns=['titleType'])
+        movies = movies.drop(columns=['isAdult'])
 
         #ratings pre-processing
         ratings['averageRating'] = ratings['averageRating'].astype(float)
@@ -52,94 +65,147 @@ def constructData():
         movies['startYear'] = movies['startYear'].astype(int)  # or some fill value
 
 
-        finalData = movies.set_index(["averageRating", "startYear", "isAdult"])
+        final_data = movies.set_index(["averageRating", "startYear"])
         
-
-        print(finalData)
+        add_columns(final_data)
     
         if read == False:
-            finalData.to_pickle("realData.pkl")
+            final_data.to_pickle("realData.pkl")
 
-        print(finalData)
+        
 
-    return finalData
+        o_print(final_data)
 
+        return final_data
+    
+def add_columns(data):
+    data['knownCast'] = data['actor_list'] + data['actress_list']
+    data['knownCast'] = data['knownCast'].apply(lambda x: len(x) if isinstance(x, list) else False)
 
-def findMoviesByActor(data, actor):
-    oPrint(f"\nselected actor {actor}\n")
-    actorName = actor.lower()
-    newData = data.copy()
-    newData['combined_list'] = newData['actor_list'] + newData['actress_list']
-    #data = data.drop(columns=['actor_list',"actress_list"])
-    exploded = newData.explode('combined_list')
+    data['numGenres'] = data['genres'].apply(lambda x: len(x) if isinstance(x, list) else False)
 
-    actorsMovies = exploded[exploded['combined_list'].str.lower() == actor.lower()].drop(columns=['combined_list'])
-    return actorsMovies
+def find_movies_by_actor(data, actor):
+    """
+    Finds movies by actor name.
+    Parameters: data (DataFrame), actor (str)
+    Returns: DataFrame of movies
+    """
 
+    data = data.copy()
+    o_print(f"\nselected actor {actor}\n")
+    data['combined_list'] = data['actor_list'] + data['actress_list']
+    exploded = data.explode('combined_list')
 
-def findActorsByMovie(data, movie):
-    oPrint(f"\nselected movie {movie}\n")
-    actorsByMovie = data[data['primaryTitle'].str.lower() == movie.lower()]
-    return actorsByMovie
-
-def getActorStats(data, actor):
-    oPrint(f"\nselected actor {actor}\n")
-    averageRating = 0
-    maxRating = 0
-    minRating = 0
-
-    df = data.loc[:, actor, :]
+    actors_movies = exploded[exploded['combined_list'].str.lower() == actor.lower()].drop(columns=['combined_list'])
+    return actors_movies
 
 
-    maxRating = float(df['rating'].max())
-    minRating = float(df['rating'].min())
-    averageRating = float(df['rating'].mean() )
+def find_actors_by_movie(data, movie):
+    """
+    Finds actors for a specific movie.
+    Parameters: data (DataFrame), movie (str)
+    Returns: DataFrame of actors
+    """
+    o_print(f"\nselected movie {movie}\n")
+    actors_by_movie = data[data['primaryTitle'].str.lower() == movie.lower()]
+    return actors_by_movie
 
-    statString = (f"The maximum rating for the actor is: {maxRating}"
-                  f"\nThe minimum rating is: {minRating}"
-                  f"\nThe average rating is {averageRating}")
+def get_actor_stats(data, actor):
+    """
+    Gets statistics for an actor.
+    Parameters: data (DataFrame), actor (str)
+    Returns: String with actor statistics
+    """
+    o_print(f"\nselected actor {actor}\n")
+    average_rating = 0
+    max_rating = 0
+    min_rating = 0
 
-    return statString
+    df = find_movies_by_actor(data, actor)
 
-def getTotalStats(data):
-    oPrint("\ngetting total stats\n")
+
+    max_rating = float(df.index.get_level_values('averageRating').max())
+    min_rating = float(df.index.get_level_values('averageRating').min())
+
+    ratings_list = df.index.get_level_values('averageRating').tolist()
+    average_rating = sum(ratings_list) / len(ratings_list)
+
+    stat_string = (f"The maximum rating for the actor is: {max_rating}"
+                  f"\nThe minimum rating is: {min_rating}"
+                  f"\nThe average rating is {average_rating}")
+
+    return stat_string
+
+def describe(datai):
+    """
+    Gets descriptive statistics for the dataset.
+    Parameters: data (DataFrame)
+    Returns: String with dataset statistics including pivot table
+    """
+    o_print("\ngetting total stats\n")
+    data = datai.copy()
     numMovies = data['tconst'].shape[0]
 
     numActors = data.explode('actor_list')['actor_list'].nunique()
     numActresses = data.explode('actress_list')['actress_list'].nunique()
 
     highestRating = data.index.get_level_values('averageRating').max()
-    highestRatedMovies = data.loc[highestRating]
+    highestRatedMovies = data.loc[highestRating].reset_index()
 
     lowestRating = data.index.get_level_values('averageRating').min()
-    lowestRatedMovies = data.loc[lowestRating]
+    lowestRatedMovies = data.loc[lowestRating].reset_index()
 
 
-    statString = (f"The total number of movies is: {numMovies}"
-                  f"\nThe total number of actors is: {numActors}"
-                  f"\nThe highest rated movie is: {highestRatedMovies}"
+
+    pivot = data.reset_index().pivot_table(index="startYear", values=["averageRating", "tconst", "numVotes"], aggfunc={"averageRating" : "mean", "tconst" : "count", "numVotes" : "sum"})
+    #renamoing pivot table column name 'tconst' to 'numMovies'
+    pivot.rename(columns={'tconst': 'numMovies'}, inplace=True)
+
+    stat_string = (f"The total number of movies is: {numMovies}"
+                  f"\nThe total number of actors is: {numActors + numActresses}"
+                  f"\nThe highest rated movie(s) has a rating of {highestRating}: \n{highestRatedMovies}"
                   f"\nThe lowest rated movie is:\n{lowestRatedMovies}"
-                  f"\nThe column names are: {data.columns}")
+                  f"\nThe column names are: {data.columns}"
+                  f"\nTable containing annual stats: \n{pivot}")
+    
 
-    return statString
+    return stat_string 
 
 
-def getMoviesForGenre(data, genre):
-    oPrint(f"\ngetting movies for genre {genre}\n")
+def get_movies_for_genre(data, genre):
+    """
+    Filters movies by genre.
+    Parameters: data (DataFrame), genre (str)
+    Returns: DataFrame of movies
+    """
+    o_print(f"\ngetting movies for genre {genre}\n")
     mask = data['genres'].apply(lambda x: any(genre.lower() == g.lower() for g in x) if isinstance(x, list) else False )
     return data.loc[mask]
 
-def getGenres(data):
-    oPrint("\ngetting genres\n")
-    dataClean = data.reset_index()
-    genres = dataClean.explode('genres')['genres'].unique()
+def get_genres(data):
+    """
+    Gets unique genres from dataset.
+    Parameters: data (DataFrame)
+    Returns: Array of unique genres
+    """
+    o_print("\ngetting genres\n")
+    data = data.reset_index()
+    genres = data.explode('genres')['genres'].unique()
     return genres
 
-def getMoviesForReleaseData(data, year1, year2=None):
-    oPrint(f"\ngetting movies for release data {year1} to {year2}\n")
+def get_movies_for_release_date(data, year1, year2=None):
+    """
+    Filters movies by release year range.
+    Parameters: data (DataFrame), year1 (int), year2 (int, optional)
+    Returns: DataFrame of movies
+    """
+    year1 = int(year1)
+
+    o_print(f"\ngetting movies for release data {year1} to {year2}\n")
     if year2 is None:
         mask = data.index.get_level_values("startYear") == year1
     else:
+        year2 = int(year2) 
         mask = (
             (data.index.get_level_values("startYear") > year1) & 
             (data.index.get_level_values("startYear") < year2)
@@ -147,12 +213,22 @@ def getMoviesForReleaseData(data, year1, year2=None):
     
     return data[mask]
 
-def getMoviesForRatings(data, rating):
-    oPrint(f"\ngetting movies for ratings {rating}\n")
+def get_movies_for_ratings(data, rating):
+    """
+    Filters movies by minimum rating.
+    Parameters: data (DataFrame), rating (float)
+    Returns: DataFrame of movies
+    """
+    o_print(f"\ngetting movies for ratings {rating}\n")
     mask = data.index.get_level_values("averageRating") > rating
     return data[mask]
 
-def getMoviesForActorActress(data, actorActress):
+def get_movies_for_actor_actress(data, actorActress):
+    """
+    Filters movies by actor/actress name.
+    Parameters: data (DataFrame), actorActress (str)
+    Returns: DataFrame of movies
+    """
     #making all in the string lower for continuity -> will be much easier this way to match -> will do same in string
     actorActressCaseInsensitive = actorActress.lower()
     actorsString = data['actors'].apply( lambda actor : ','.join(actor) if isinstance(actor, list) else (actor if isinstance(actor, str) else '') )
@@ -161,12 +237,24 @@ def getMoviesForActorActress(data, actorActress):
     return data.loc[mask]
 
 
-def oPrint(data):
-    if oPrintOn == True:
+def o_print(data):
+    """
+    Optional print function controlled by oPrintOn flag.
+    Parameters: data (any)
+    Returns: None
+    """
+    if o_print_on == True:
         print(data)
     else:
         pass
 
+def printPivot(data):
+
+    #pivot = data.pivot_table(index="primaryTitle", columns)
+    pass
+
+def export_data(data):
+    data.to_excel("data.xlsx")
     
 
 
