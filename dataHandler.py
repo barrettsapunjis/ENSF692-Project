@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-o_print_on = True
+o_print_on = False
 
 
 def construct_data():
@@ -18,108 +18,127 @@ def construct_data():
     Constructs and returns the main movie dataset.
     Returns: DataFrame with hierarchical index
     """
+    #If ran once, pickle data will be saved and read from
     try: 
         final_data = pd.read_pickle("realData.pkl")
         print("pickle data found")
-        read = True
+        return final_data
+
 
     except Exception as e:
-        read = False
         pass
 
-    if read:
-        return final_data
     
-    else:
 
+    try:
         actors = pd.read_csv("customData/namesActorActressOnly.csv")
         movies = pd.read_csv("customData/titles1980.csv")
         ratings = pd.read_csv("customData/Ratings.csv")
-
-        #Actors pre-processing
-        actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
-        try:
-            principals = pd.read_csv("customData/prinicpalsActorsActressesOnly.csv")
-            #Add principals data to actor data to increase the number of movies they are connected to 
-            principals = principals.dropna(subset=["nconst", "tconst"])
-            principals_grouped = (
-                principals.groupby("nconst")["tconst"]
-                .apply(set)           # use set to remove duplicates
-                .reset_index()
-            )
-
-            actors = actors.merge(principals_grouped, on="nconst", how="left")
-
-            actors["knownForTitles"] = actors["knownForTitles"].fillna("").apply(
-                lambda x: set() if x == "" else x
-            )
-
-            actors["allMovies"] = actors.apply(
-                lambda row: list(set(row["knownForTitles"]) | (row["tconst"] if isinstance(row["tconst"], set) else set())), axis=1
-            )
-            actors = actors.drop(columns=["knownForTitles", "tconst"])
-            #must explode the actors movie list into different columns
-            actors = actors.explode("allMovies").reset_index()
-            actors["allMovies"] = actors["allMovies"].str.strip()
-        except Exception as e:
-            actors.rename(columns={'knownForTitles': 'allMovies'}, inplace=True)
-
-        #Movies pre-processing
-        movies['genres'] = movies['genres'].str.split(",")
-        movies = movies.drop(columns=['titleType'])
-        movies = movies.drop(columns=['isAdult'])
-
-        #ratings pre-processing
-        ratings['averageRating'] = ratings['averageRating'].astype(float)
-        ratings.rename(columns={'averageRating': 'rating'}, inplace=True)
-        ratings['numVotes'] = ratings['numVotes'].astype(int)
-
-        actors_only = actors[actors["primaryProfession"].str.contains("actor", case=False, na=False)]
-        actresses_only = actors[actors["primaryProfession"].str.contains("actress", case=False, na=False)]
-
-        actor_groups = actors_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
-        actor_groups.columns = ["tconst", "actor_list"]
-
-        actress_groups = actresses_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
-        actress_groups.columns = ["tconst", "actress_list"]
-
-        movies = movies.merge(actor_groups, on="tconst", how="left") \
-                .merge(actress_groups, on="tconst", how="left")
-        
-        movies = movies.merge(ratings, on="tconst", how='left' )
-        movies['startYear'] = movies['startYear'].fillna(0).astype(int)  # or some fill value
-        movies['startYear'] = movies['startYear'].astype(int)  # or some fill value
-
-
-        final_data = movies.set_index(["startYear", "primaryTitle"])
-        
-        add_columns(final_data)
+    except Exception as e:
+        print("Error reading actors, movies, or ratings data")
+        return None
     
-        if read == False:
-            final_data.to_pickle("realData.pkl")
 
-        
+    #Actors pre-processing
+    actors["knownForTitles"] = actors["knownForTitles"].str.split(",")
+    try:
+        principals = pd.read_csv("customData/principalsActorsActressesOnly.csv")
+        #Add principals data to actor data to increase the number of movies they are connected to 
+        principals = principals.dropna(subset=["nconst", "tconst"])
+        principals_grouped = (
+            principals.groupby("nconst")["tconst"]
+            .apply(set)           # use set to remove duplicates
+            .reset_index()
+        )
 
-        o_print(final_data)
+        actors = actors.merge(principals_grouped, on="nconst", how="left")
 
-        return final_data
+        actors["knownForTitles"] = actors["knownForTitles"].fillna("").apply(
+            lambda x: set() if x == "" else x
+        )
+
+        actors["allMovies"] = actors.apply(
+            lambda row: list(set(row["knownForTitles"]) | (row["tconst"] if isinstance(row["tconst"], set) else set())), axis=1
+        )
+        actors = actors.drop(columns=["knownForTitles", "tconst"])
+    except Exception as e:
+        actors.rename(columns={'knownForTitles': 'allMovies'}, inplace=True)
+
+    #must explode the actors movie list into different columns
+    actors = actors.explode("allMovies").reset_index()
+    actors["allMovies"] = actors["allMovies"].str.strip()
+
+    #Movies pre-processing
+    movies['genres'] = movies['genres'].str.split(",")
+    movies = movies.drop(columns=['titleType'])
+    movies = movies.drop(columns=['isAdult'])
+    movies = movies.drop(columns=['endYear'])
+
+    #ratings pre-processing
+    ratings['averageRating'] = ratings['averageRating'].astype(float)
+    ratings.rename(columns={'averageRating': 'rating'}, inplace=True)
+    ratings['numVotes'] = ratings['numVotes'].astype(int)
+
+    #filter actors and actresses
+    actors_only = actors[actors["primaryProfession"].str.contains("actor", case=False, na=False)]
+    actresses_only = actors[actors["primaryProfession"].str.contains("actress", case=False, na=False)]
+
+    #group by movie and get list of actors
+    actor_groups = actors_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
+    actor_groups.columns = ["tconst", "actor_list"]
+
+    #group by movie and get list of actresses
+    actress_groups = actresses_only.groupby("allMovies")["primaryName"].apply(list).reset_index()
+    actress_groups.columns = ["tconst", "actress_list"]
+
+    #merge actors and actresses with movies
+    movies = movies.merge(actor_groups, on="tconst", how="left") \
+            .merge(actress_groups, on="tconst", how="left")
+    
+    #convert to list if not already (could be NaN)
+    movies['actor_list'] = movies['actor_list'].apply(lambda x: x if isinstance(x, list) else [])
+    movies['actress_list'] = movies['actress_list'].apply(lambda x: x if isinstance(x, list) else [])
+
+    #merge with ratings
+    movies = movies.merge(ratings, on="tconst", how='left' )
+    movies['startYear'] = movies['startYear'].fillna(0).astype(int)  # or some fill value
+    movies['startYear'] = movies['startYear'].astype(int)  # or some fill value
+
+    #set index
+    final_data = movies.set_index(["startYear", "primaryTitle"])
+    
+    final_data.to_pickle("realData.pkl")
+
+    
+
+    o_print(final_data)
+
+    return final_data
     
 
 def add_columns(data):
+    """
+    Adds computed columns to the dataset.
+    Parameters: data (DataFrame) - The dataset to add columns to
+    Returns: None
+    """
     data['knownCast'] = data['actor_list'] + data['actress_list']
     data['knownCast'] = data['knownCast'].apply(lambda x: len(x) if isinstance(x, list) else False)
 
     data['numGenres'] = data['genres'].apply(lambda x: len(x) if isinstance(x, list) else False)
 
-def find_movies_by_actor(data, actor):
+def find_movies_by_actor(datai, actor):
     """
     Finds movies by actor name.
     Parameters: data (DataFrame), actor (str)
     Returns: DataFrame of movies
     """
 
-    data = data.copy()
+    data = datai.copy()
+
     o_print(f"\nselected actor {actor}\n")
+    
+    #combine actor and actress lists so search both genders at once
     data['combined_list'] = data['actor_list'] + data['actress_list']
     exploded = data.explode('combined_list')
 
@@ -127,22 +146,24 @@ def find_movies_by_actor(data, actor):
     return actors_movies
 
 
-def find_actors_by_movie(data, movie):
+def find_actors_by_movie(datai, movie):
     """
     Finds actors for a specific movie.
     Parameters: data (DataFrame), movie (str)
     Returns: DataFrame of actors
     """
     o_print(f"\nselected movie {movie}\n")
+    data = datai.copy()
     actors_by_movie = data[data.index.get_level_values('primaryTitle').str.lower() == movie.lower()]
     return actors_by_movie
 
-def get_actor_stats(data, actor):
+def get_actor_stats(datai, actor):
     """
     Gets statistics for an actor.
     Parameters: data (DataFrame), actor (str)
     Returns: String with actor statistics
     """
+    data = datai.copy()
     o_print(f"\nselected actor {actor}\n")
     average_rating = 0
     max_rating = 0
@@ -163,69 +184,39 @@ def get_actor_stats(data, actor):
 
     return stat_string
 
-def describe(datai):
-    """
-    Gets descriptive statistics for the dataset.
-    Parameters: data (DataFrame)
-    Returns: String with dataset statistics including pivot table
-    """
-    o_print("\ngetting total stats\n")
-    data = datai.copy()
-    numMovies = data['tconst'].shape[0]
 
-    numActors = data.explode('actor_list')['actor_list'].nunique()
-    numActresses = data.explode('actress_list')['actress_list'].nunique()
-
-    highestRating = data['rating'].max()
-    highestRatedMovies = data[data['rating'] == highestRating].reset_index()
-
-    lowestRating = data['rating'].min()
-    lowestRatedMovies = data[data['rating'] == lowestRating].reset_index()
-
-
-
-    pivot = data.reset_index().pivot_table(index="startYear", values=["rating", "tconst", "numVotes"], aggfunc={"rating" : "mean", "tconst" : "count", "numVotes" : "sum"})
-    #renamoing pivot table column name 'tconst' to 'numMovies'
-    pivot.rename(columns={'tconst': 'numMovies'}, inplace=True)
-
-    stat_string = (f"The total number of movies is: {numMovies}"
-                  f"\nThe total number of actors is: {numActors + numActresses}"
-                  f"\nThe highest rated movie(s) has a rating of {highestRating}: \n{highestRatedMovies}"
-                  f"\nThe lowest rated movie is:\n{lowestRatedMovies}"
-                  f"\nThe column names are: {data.columns}"
-                  f"\nTable containing annual stats: \n{pivot}")
-    
-
-    return stat_string 
-
-
-def get_movies_for_genre(data, genre):
+def get_movies_for_genre(datai, genre):
     """
     Filters movies by genre.
     Parameters: data (DataFrame), genre (str)
     Returns: DataFrame of movies
     """
+    data = datai.copy()
     o_print(f"\ngetting movies for genre {genre}\n")
+
+    #Create a mask to filter movies by genre
     mask = data['genres'].apply(lambda x: any(genre.lower() == g.lower() for g in x) if isinstance(x, list) else False )
     return data.loc[mask]
 
-def get_genres(data):
+def get_genres(datai):
     """
     Gets unique genres from dataset.
     Parameters: data (DataFrame)
     Returns: Array of unique genres
     """
+    data = datai.copy()
     o_print("\ngetting genres\n")
     data = data.reset_index()
     genres = data.explode('genres')['genres'].unique()
     return genres
 
-def get_movies_for_release_date(data, year1, year2=None):
+def get_movies_for_release_date(datai, year1, year2=None):
     """
     Filters movies by release year range.
     Parameters: data (DataFrame), year1 (int), year2 (int, optional)
     Returns: DataFrame of movies
     """
+    data = datai.copy()
     year1 = int(year1)
 
     o_print(f"\ngetting movies for release data {year1} to {year2}\n")
@@ -240,27 +231,32 @@ def get_movies_for_release_date(data, year1, year2=None):
     
     return data[mask]
 
-def get_movies_for_ratings(data, rating):
+def get_movies_for_ratings(datai, rating):
     """
     Filters movies by minimum rating.
     Parameters: data (DataFrame), rating (float)
     Returns: DataFrame of movies
     """
+    data = datai.copy()
     o_print(f"\ngetting movies for ratings {rating}\n")
     mask = data['rating'] > rating
     return data[mask]
 
-def get_movies_for_actor_actress(data, actorActress):
+def get_movies_for_actor_actress(datai, actor_actress):
     """
     Filters movies by actor/actress name.
-    Parameters: data (DataFrame), actorActress (str)
+    Parameters: data (DataFrame), actor_actress (str)
     Returns: DataFrame of movies
     """
-    #making all in the string lower for continuity -> will be much easier this way to match -> will do same in string
-    actorActressCaseInsensitive = actorActress.lower()
-    actorsString = data['actors'].apply( lambda actor : ','.join(actor) if isinstance(actor, list) else (actor if isinstance(actor, str) else '') )
+    data = datai.copy()
 
-    mask = actorsString.str.lower().str.contains(actorActressCaseInsensitive)
+    #making all in the string lower for continuity
+    actor_actress_case_insensitive = actor_actress.lower()
+
+    #Join all actors in a movie into a single string
+    actors_string = data['actors'].apply( lambda actor : ','.join(actor) if isinstance(actor, list) else (actor if isinstance(actor, str) else '') )
+
+    mask = actors_string.str.lower().str.contains(actor_actress_case_insensitive)
     return data.loc[mask]
 
 
@@ -275,62 +271,77 @@ def o_print(data):
     else:
         pass
 
-def printPivot(data):
-
-    #pivot = data.pivot_table(index="primaryTitle", columns)
-    pass
-
 def get_user_data_analysis(datai):
+    """
+    Performs basic statistical analysis on the movie dataset.
+    Parameters: datai (DataFrame) - The movie dataset to analyze
+    Returns: Tuple of (short_data, full_data, output_string)
+    """
     data = datai.copy()
     average_data_rating = data['rating'].mean()
     average_runtime = data['runtimeMinutes'].astype(float).mean()
     
+    #Calculate deltas for each row based on average values
     data['ratingDelta'] = data['rating'].astype(float) - average_data_rating
     data['runtimeDelta'] = data['runtimeMinutes'].astype(float) - average_runtime
+    add_columns(data)
     full_data = data
-    short_data = data.drop(columns=['tconst', 'originalTitle', 'endYear', 'actor_list', 'actress_list', 'genres'])
+    short_data = data.drop(columns=['tconst', 'originalTitle', 'actor_list', 'actress_list', 'genres'])
 
 
-    outputString = (f"\nThe below stats are based on the above filtered data\n"
-                    f"\nTotal number of movies: {data['rating'].shape[0]}\n"
+    output_string =  (f"\nTotal number of movies: {data['rating'].shape[0]}\n"
                     f"Average movie rating is: {average_data_rating:.2f}\n"
                     f"Average movie runtime is: {average_runtime:.2f} minutes\n"
                     f"Average number of votes per movie is: {data['numVotes'].mean():.2f}\n")
     
-    return short_data, full_data, outputString
+    return short_data, full_data, output_string
 
 
-def averageRatingOfMoviesByYear(data):
+def average_rating_of_movies_by_year(datai):
+    """
+    Creates a scatter plot of average movie ratings by release year.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: None
+    """
+    data = datai.copy()
     
     data = data.reset_index()
 
-    averageByYear = data.groupby('startYear')['rating'].mean()
+    average_by_year = data.groupby('startYear')['rating'].mean()
 
     plt.figure()
-    plt.scatter(averageByYear.index.astype(int), averageByYear.values)
+    plt.scatter(average_by_year.index.astype(int), average_by_year.values)
     plt.title("Average Movie Rating Based On Year of Release")
     plt.xlabel("Release Year")
     plt.ylabel("Average Rating")
     plt.show()
    
 
-def averageRatingsRatingOfMoviesByYearAndGenre(data):
+def average_ratings_of_movies_by_year_and_genre(datai):
+    """
+    Creates a line plot showing average ratings by genre over time.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: None
+    """
+    data = datai.copy()
     
     data = data.reset_index()[["startYear","rating","genres"]]
     data = data.explode("genres").dropna(subset=["genres","rating"])
 
-    #Realized way to many genres -> and made graph look off, so decided just to keep top 10 genres!
+    #reduce to 10 most common genres
     top_genres = data['genres'].value_counts().nlargest(10).index
     data = data[data['genres'].isin(top_genres)]
-                                     
-    genreGroupsYear = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
+
+
+    #Group by genre and year to get average rating for each genre each year
+    genre_groups_year = data.groupby(['genres', 'startYear'])['rating'].mean().reset_index()
     
-    pivotGenreGroupColumns = genreGroupsYear.pivot(index = 'startYear', columns = 'genres', values = 'rating')
+    pivot_genre_group_columns = genre_groups_year.pivot(index = 'startYear', columns = 'genres', values = 'rating')
 
 
     plt.figure(figsize=(14,7))
-    for genres in pivotGenreGroupColumns.columns:
-        plt.plot(pivotGenreGroupColumns.index, pivotGenreGroupColumns[genres], marker = 'o', label=genres)
+    for genres in pivot_genre_group_columns.columns:
+        plt.plot(pivot_genre_group_columns.index, pivot_genre_group_columns[genres], marker = 'o', label=genres)
     plt.title("Average Movie Rating By Genre For Release Year")
     plt.xlabel("Year")
     plt.ylabel("Average Rating")
@@ -338,51 +349,72 @@ def averageRatingsRatingOfMoviesByYearAndGenre(data):
     plt.show()
 
 
-def topActorsByRating(data):
-    dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
+def top_actors_by_rating(datai):
+    """
+    Finds the top 10 actors by average rating who have appeared in at least 10 movies.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: DataFrame with top actors and their statistics
+    """
+    data = datai.copy()
+    data_reset = data.reset_index() 
 
-    actorRatingData = dataReset[['rating', 'actor_list']].explode('actor_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    #Drop most columns as we only need rating and actor list
+    actor_rating_data = data_reset[['rating', 'actor_list']].explode('actor_list') 
+    actor_rating_data['rating'] = actor_rating_data['rating'].fillna(0)
 
-    #now also want to clean up my actor list to ensure that different cases wont mess anything up
-    actorRatingData['actor_list'] = actorRatingData['actor_list'].str.strip().str.title()
+    #Cleaning up actor list
+    actor_rating_data['actor_list'] = actor_rating_data['actor_list'].str.strip().str.title()
 
-    topActorPivotTable = pd.pivot_table(actorRatingData, index = 'actor_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
+    #Pivot table to count the number of ratings (movies) and average rating for each actor
+    top_actor_pivot_table = pd.pivot_table(actor_rating_data, index = 'actor_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
 
-    topActorPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
+    top_actor_pivot_table.columns = ['Number of Movies' , "Average Rating Across Movies"]
 
-    topActorPivotTable = topActorPivotTable[topActorPivotTable['Number of Movies'] >= 10]
+    top_actor_pivot_table = top_actor_pivot_table[top_actor_pivot_table['Number of Movies'] >= 10]
 
-    topActorPivotTable = topActorPivotTable.sort_values('Average Rating Across Movies', ascending = False).head(10)
+    top_actor_pivot_table = top_actor_pivot_table.sort_values('Average Rating Across Movies', ascending = False).head(10)
 
-    return topActorPivotTable
+    return top_actor_pivot_table
 
-def topActressesByRating(data):
+def top_actresses_by_rating(datai):
+    """
+    Finds the top 10 actresses by average rating who have appeared in at least 10 movies.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: DataFrame with top actresses and their statistics
+    """
+    data = datai.copy()
     
-    dataReset = data.reset_index() #turning all the data into columns -> as we really only need 2 columns -> rating and actors, but I want to repeat ratings for the actors in same movie so will use explode
+    data_reset = data.reset_index() 
 
-    actressRatingData = dataReset[['rating', 'actress_list']].explode('actress_list') #this effectively takes for each actor in the list and makes a new row (ChatGPT reference here helped me find the best way to do it -> explode is awesome probably will use again in future stats functions)
+    actress_rating_data = data_reset[['rating', 'actress_list']].explode('actress_list')
 
-    #now also want to clean up my actor list to ensure that different cases wont mess anything up
-    actressRatingData['actress_list'] = actressRatingData['actress_list'].str.strip().str.title()
+    actress_rating_data['actress_list'] = actress_rating_data['actress_list'].str.strip().str.title()
 
-    topActressPivotTable = pd.pivot_table(actressRatingData, index = 'actress_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
+    #count the number of ratings (movies) and average rating for each actress
+    top_actress_pivot_table = pd.pivot_table(actress_rating_data, index = 'actress_list', values = 'rating', aggfunc={'rating': ['count', 'mean']})
 
-    topActressPivotTable.columns = ['Number of Movies' , "Average Rating Across Movies"]
+    top_actress_pivot_table.columns = ['Number of Movies' , "Average Rating Across Movies"]
 
-    topActressPivotTable = topActressPivotTable[topActressPivotTable['Number of Movies'] >= 10]
+    top_actress_pivot_table = top_actress_pivot_table[top_actress_pivot_table['Number of Movies'] >= 10]
 
-    topActressPivotTable = topActressPivotTable.sort_values('Average Rating Across Movies', ascending = False).head(10)
+    top_actress_pivot_table = top_actress_pivot_table.sort_values('Average Rating Across Movies', ascending = False).head(10)
 
-    return topActressPivotTable
+    return top_actress_pivot_table
 
-def moviesByGenre(data):
+def movies_by_genre(datai):
+    """
+    Creates a bar chart showing the number of movies released for each genre.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: None
+    """
+    data = datai.copy()
     
-    dataExploded = data.explode('genres')
-    genreCount = dataExploded['genres'].value_counts()
-    colours = sns.color_palette('husl', len(genreCount)) 
+    data_exploded = data.explode('genres')
+    genre_count = data_exploded['genres'].value_counts()
+    colours = sns.color_palette('husl', len(genre_count)) 
 
     plt.figure(figsize=(14,7))
-    bars = plt.bar(genreCount.index, genreCount.values, color = colours)   
+    bars = plt.bar(genre_count.index, genre_count.values, color = colours)   
 
     for i, bar in enumerate(bars):
         height = bar.get_height()    
@@ -397,39 +429,37 @@ def moviesByGenre(data):
     plt.tight_layout()
     plt.show()
 
-#this function is using a linear regression (simple on that ordinary least-squares) to see if there is a connection between number of votes and rating as:
 
-#Hypothesis
-#number of votes and rating as whole. I would assume the more votes a movie gets generally its rating would be lower -> 
-# as more subjected to critics from the masses where as more niche movies generally just have people who enjoy the genre/actor ect viewing them and voting which probably would be more positive in light
+def votes_vs_rating(datai):
+    """
+    Performs linear regression analysis between number of votes and ratings.
+    Parameters: datai (DataFrame) - The movie dataset
+    Returns: None
+    """
+    data = datai.copy()
 
-#Slope of the regression whether negative or positive will tell us the relationship
-def votesVsRating(data):
-
+    #Process data for linear regression
     data = data[['numVotes', 'rating']].dropna()
     ratings = data['rating'].astype(float)
     votes = data['numVotes'].astype(int).values
 
-
-    #going to log transform (shout out to ChatGPT to help me realize that this needed -> to ensure votes need the same skew, also to add plus one to avoid log of 0, so helpful for debugging!!)
-    # as there is such a range of votes with movies it will make the axises look super skewed and hard to interpret -> plus for a regression need to be on same scale
-    
-    
+    #Section will find the linear regression of the votes vs ratings data
+    #ChatGPT used to provide useful functions and example uses
+    #log transformartion 
     log_votes = np.log10(votes + 1)
 
     #fitting our data and creating the line of best fit based on the all the points!
     m, b = np.polyfit(log_votes, ratings, 1)
 
-    #Now time to plot and include our linear regression
-
+    #Plot a scatter of the votes vs ratings data
     plt.figure()
     plt.scatter(log_votes, ratings, alpha =0.1, s=10)
 
     #regression
-    xRegression = np.linspace(log_votes.min(), log_votes.max(), 200)
-    yRegression = m * xRegression + b
+    x_regression = np.linspace(log_votes.min(), log_votes.max(), 200)
+    y_regression = m * x_regression + b
 
-    plt.plot(xRegression, yRegression, color ='purple', linestyle='--', linewidth=2,  label='Linear Fit')
+    plt.plot(x_regression, y_regression, color ='purple', linestyle='--', linewidth=2,  label='Linear Fit')
     plt.xlabel('Number of Votes (Log Scale of 10)')
     plt.ylabel("Average rating")
     plt.title("Ratings vs Number of Votes (Log Scale)", fontsize=14)
@@ -438,16 +468,24 @@ def votesVsRating(data):
     plt.tight_layout()
     plt.show()
 
+    #Calculate R-squared value (a representation of how well the model fits the data)
     y_pred = m * log_votes + b
     ss_res = ((ratings - y_pred) ** 2).sum()
     ss_tot = ((ratings - ratings.mean())**2).sum()
     r2 = 1 - ss_res/ss_tot
+
+    print("\n\033[32mLinear Regression Analysis Results:\033[0m")
     print(f"Slope (m): {m}")
     print(f"Intercept (b): {b}")
-    print(f"R² = {r2:.3f}")
+    print(f"R² (accuracy metric) = {r2:.3f}")
 
 
 def export_data(data):
+    """
+    Exports the dataset to an Excel file.
+    Parameters: data (DataFrame) - The dataset to export
+    Returns: String confirmation message
+    """
     data.to_excel("data.xlsx")
     return "completed"
     

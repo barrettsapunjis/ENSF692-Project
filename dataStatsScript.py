@@ -3,25 +3,25 @@ import matplotlib.pyplot as plt
 import dataHandler as dH
 import numpy as np
 
-def main():
-    data = dH.construct_data()
-    print(data.columns)
-    print(data.head(10))
+def describe(datai):
+    """
+    Computes and displays comprehensive movie database analysis including visualizations.
+    Parameters: datai (DataFrame) - The movie dataset to analyze
+    Returns: None
+    """
+    data = datai.copy().sort_index(ascending=False)
+    print(f"\n\033[32mHere are the first 10 columns of the entire dataset:\033[0m\n\n{data.head(10)}")
 
-    print(len(data))
     print(f"Rows: {data.shape[0]}, Columns: {data.shape[1]}")
 
-    print(data.shape)
 
-    dH.averageRatingOfMoviesByYear(data)
+    dH.average_rating_of_movies_by_year(data)
 
-    dH.averageRatingsRatingOfMoviesByYearAndGenre(data)
+    dH.average_ratings_of_movies_by_year_and_genre(data)
 
-    print(dH.topActorsByRating(data))
-    print(dH.topActressesByRating(data))
+    print(f"\n\033[32mPrinting the top 10 actors that have appeared in more than 10 movies\033[0m\n{dH.top_actors_by_rating(data)}")
+    print(f"\n\033[32mPrinting the top 10 actresses that have appeared in more than 10 movies\033[0m\n{dH.top_actresses_by_rating(data)}")
 
-    dH.moviesByGenre(data)
-    dH.votesVsRating(data)
+    dH.movies_by_genre(data)
+    dH.votes_vs_rating(data)
 
-if __name__ == "__main__":
-    main()
