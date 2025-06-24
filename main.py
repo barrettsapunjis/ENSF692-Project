@@ -29,7 +29,7 @@ def interactiveCLI():
     current_data = data
 
     print("\nHello! Welcome to The Movie Catalog. You wil have the ability to get a list of movies that match your specifications. \n" \
-            "You can will have the option to sorts our list of over 200 000 movies by genre, release dates, actors and ratings! You can continue" \
+            "You can will have the option to sorts our list of over 450,000 movies by genre, release dates, actors and ratings! You can continue" \
             "filtering this list for as long as you desire \n "
             "Lets Begin: How would like to start your filtering?\n")
     
