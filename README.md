@@ -2,6 +2,7 @@
 Data analysis group project. The purpose of the project is to combine 3 seperate (but related) data sets and create a UI for a user to query the combined dataset. 
 
 members: Marley Cheema, Barrett Sapunjis 
+Group: 6
 
 
 The three datasets used are pulled directly from IMDB (https://datasets.imdbws.com/) and modified to a smaller form. They could not be saved as xlsx without losing data. 
@@ -26,7 +27,7 @@ The three datasets used are pulled directly from IMDB (https://datasets.imdbws.c
     - `make sure to download/acquire the data sets that are not posted on git`
         - https://1drv.ms/f/c/46dad491737b36ce/EqEDtUPNf2NBsdptI45pQI0B6YA13g0AbrAMVde8SHsKIw?e=nK2J8O
         - add principals data to customData and pickle file to the same directoy as app.py
-   	- `python .\app.py`
+   	- `python .\main.py`
 
     
 
@@ -35,7 +36,7 @@ The three datasets used are pulled directly from IMDB (https://datasets.imdbws.c
 
 ```mermaid graph TD
 classDiagram
-    class App {
+    class main {
         - og_data : DataFrame
         - current_data : DataFrame
         - user_in : int
@@ -68,6 +69,6 @@ classDiagram
         + describe(data: DataFrame) void
     }
     
-    App --> DataHandler : uses
-    App --> DataStatsScript : uses
+    main --> DataHandler : uses
+    main --> DataStatsScript : uses
 ```
