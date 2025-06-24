@@ -5,15 +5,15 @@ members: Marley Cheema, Barrett Sapunjis
 
 
 The three datasets used are pulled directly from IMDB (https://datasets.imdbws.com/) and modified to a smaller form. They could not be saved as xlsx without losing data. 
-    - namesActorActressOnly.csv
-        - originally: name.basics.tsv.gz
-        - modified to only contain people whos role listed them as an actor or actress
-    - ratings.csv
-        - originally: title.ratings.tsv.gz
-        - Not modified
-    - titles1980.csv
-        - originaly: title.basics.tsv.gz
-        - modified to only contain information on all movies made since 1980
+- namesActorActressOnly.csv
+   - originally: name.basics.tsv.gz
+     - modified to only contain people whos role listed them as an actor or actress
+- ratings.csv
+    - originally: title.ratings.tsv.gz
+    - Not modified
+- titles1980.csv
+    -  originaly: title.basics.tsv.gz
+    -  modified to only contain information on all movies made since 1980
   
      
 
