@@ -22,6 +22,7 @@ The three datasets used are pulled directly from IMDB (https://datasets.imdbws.c
    	- `pip install -r requirements.txt`
     - `make sure to download/acquire the data sets that are not posted on git`
         - https://1drv.ms/f/c/46dad491737b36ce/EqEDtUPNf2NBsdptI45pQI0B6YA13g0AbrAMVde8SHsKIw?e=nK2J8O
+        - add principals data to customData and pickle file to the same directoy as app.py
    	- `python .\app.py`
 
     
