@@ -32,6 +32,9 @@ The three datasets used are pulled directly from IMDB (https://datasets.imdbws.c
 ```mermaid graph TD
 classDiagram
     class App {
+        - og_data : DataFrame
+        - current_data : DataFrame
+        - user_in : int
         + interactiveCLI() void
     }
     
