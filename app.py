@@ -129,11 +129,12 @@ def interactiveCLI():
         print(f"\n🔍 Currently based on your selections your output list of movies has {count} entries that match the criteria!")
 
         if count == 0:
-            print("No movies left to filter—exiting.")
-            break
+            print("\nNo movies left to filter—exiting. Resetting data...\n")
+            current_data = og_data.copy()
+
 
         # 5) Ask whether to keep filtering this same slice
-        again = input("Would you like to apply another filter on this list? (Y/N): ").strip().lower()
+        again = input("Would you like to apply another filter on this list or select a new option? (Y/N): ").strip().lower()
         if again != 'y':
             break
 
