@@ -2,16 +2,17 @@
 ENSF 692 Spring 2025 - Final Project
 Movie Database Analysis System - Main Application
 Authors: Marley Cheema, Barrett Sapunjis
+Group: 6
 Description: Interactive CLI for movie database queries
-
-The dataHandler is capable of dynamically importing the data from a pickle file if one exists under the name "realData.pkl". 
-It is suggested to add this file to the same folder as the app.py file. As its exactly what the first construction of the data is.
-
-If you would like to run the data construction, it may take some time and you must not include the .pkl file into the same folder as the app.py file.
-
-The principals file is very large and vastly increases the time of the data construction. It also does not need to be used for the program to run.
-If you would like to use the principals file, you can add it into the "customData" folder.
 """
+
+# The dataHandler is capable of dynamically importing the data from a pickle file if one exists under the name "realData.pkl". 
+# It is suggested to add this file to the same folder as the app.py file. As its exactly what the first construction of the data is.
+
+# If you would like to run the data construction, it may take some time and you must not include the .pkl file into the same folder as the app.py file.
+
+# The principals file is very large and vastly increases the time of the data construction. It also does not need to be used for the program to run.
+# If you would like to use the principals file, you can add it into the "customData" folder.
 
 import pandas as pd
 import dataHandler as dh
@@ -65,7 +66,7 @@ def interactiveCLI():
 
         elif user_in == 2:
             new_in = input(f"You have selected option [{user_in}]: Get movies by release date. \n" \
-                            "You now have three options, if you would like to filter for movies after a certain year enter : 1 \n" \
+                            "You now have three options.\nif you would like to filter for movies after a certain year enter : 1 \n" \
                             "If you like to filter for movie before a certain year enter : 2 \n" \
                             "If you would like to filter for movie between two years enter : 3 \n")
             release_date_option = new_in
@@ -120,7 +121,7 @@ def interactiveCLI():
             print("Data has been reset")
 
         else:
-            print("Invalid selection please enter a number between1–4.")
+            print("Invalid selection please enter a number between 0–7.")
             continue
 
 
@@ -129,16 +130,17 @@ def interactiveCLI():
         print(f"\n🔍 Currently based on your selections your output list of movies has {count} entries that match the criteria!")
 
         if count == 0:
-            print("No movies left to filter—exiting.")
-            break
+            print("\nNo movies left to filter—exiting. Resetting data...\n")
+            current_data = og_data.copy()
+
 
         # 5) Ask whether to keep filtering this same slice
-        again = input("Would you like to apply another filter on this list? (Y/N): ").strip().lower()
+        again = input("Would you like to apply another filter on this list or select a new option? (Y/N): ").strip().lower()
         if again != 'y':
             break
 
     # 6) Final output
-    if count > 0:
+    if len(current_data) > 0:
         print("\n🎬 \033[32mHere is a sample of your final list:\033[0m")
         print(current_data.copy().reset_index().head())
 
@@ -146,13 +148,13 @@ def interactiveCLI():
         analyzed_data, full_data, analysis_string = dh.get_user_data_analysis(current_data)
         print(analyzed_data.reset_index().head())
         print(analysis_string)
-        print("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
         dh.export_data(full_data)
 
         print("\n\033[32mYour data has been exported to data.xlsx\033[0m\n")
-        print("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
         input("\n\033[32mEnter any key to print the analysis for the entire dataset\033[0m\n")
-        print("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 
         ds.describe(og_data)
     
